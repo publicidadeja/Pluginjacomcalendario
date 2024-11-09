@@ -809,5 +809,7 @@ add_action('wp_ajax_nopriv_gma_reprovar_material', 'gma_reprovar_material');
 add_action('wp_ajax_nopriv_gma_editar_material', 'gma_editar_material');
 add_action('wp_ajax_nopriv_gma_salvar_feedback', 'gma_salvar_feedback');
 add_action('wp_ajax_nopriv_gma_obter_material', 'gma_obter_material_ajax');
+add_action('wp_ajax_gma_criar_material', 'gma_handle_criar_material');
+
 
 ?>
