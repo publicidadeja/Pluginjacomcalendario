@@ -119,3 +119,18 @@ jQuery(document).ready(function($) {
     }, 5000);
 }
 });
+document.addEventListener('DOMContentLoaded', function() {
+    // Manipulador de clique para thumbnails de vídeo
+    document.querySelectorAll('.video-thumbnail').forEach(thumbnail => {
+        thumbnail.addEventListener('click', function() {
+            const videoUrl = this.dataset.videoUrl;
+            const videoElement = document.createElement('video');
+            videoElement.src = videoUrl;
+            videoElement.controls = true;
+            videoElement.autoplay = true;
+            videoElement.className = 'material-video';
+            
+            this.parentElement.replaceChild(videoElement, this);
+        });
+    });
+});
