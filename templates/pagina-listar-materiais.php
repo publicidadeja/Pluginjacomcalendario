@@ -3,11 +3,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Enqueue necessário
+// Enqueue necessary files
 wp_enqueue_style('gma-admin-style', plugins_url('/assets/css/admin-style.css', dirname(__FILE__)));
 wp_enqueue_script('gma-admin-script', plugins_url('/assets/js/admin-script.js', dirname(__FILE__)), array('jquery'), '1.0', true);
 wp_enqueue_style('swiper-style', 'https://unpkg.com/swiper/swiper-bundle.min.css');
 wp_enqueue_script('swiper-script', 'https://unpkg.com/swiper/swiper-bundle.min.js', array('jquery'), null, true);
+wp_enqueue_style('dashicons');
 
 // Debug mode
 if (WP_DEBUG) {
@@ -18,7 +19,7 @@ if (WP_DEBUG) {
 <div class="wrap">
     <center><h1 class="gma-header">Listar Materiais</h1></center>
 
-    <!-- Filtros -->
+    <!-- Filters -->
     <div class="gma-filter">
         <select id="filter-status" class="gma-filter-select">
             <option value="todos">Todos os Status</option>
@@ -37,39 +38,48 @@ if (WP_DEBUG) {
     </div>
 
     <div class="gma-grid">
+        <!-- Approved Materials -->
         <div class="gma-card" data-status="aprovado">
             <h2 class="column-header approved">Aprovados</h2>
             <div class="materials-list">
                 <?php
-                foreach ($materiais as $material) {
-                    if ($material->status_aprovacao === 'aprovado') {
-                        echo gma_render_material_card($material);
+                if (!empty($materiais)) {
+                    foreach ($materiais as $material) {
+                        if ($material->status_aprovacao === 'aprovado') {
+                            echo gma_render_material_card($material);
+                        }
                     }
                 }
                 ?>
             </div>
         </div>
 
+        <!-- Rejected Materials -->
         <div class="gma-card" data-status="reprovado">
             <h2 class="column-header rejected">Reprovados</h2>
             <div class="materials-list">
                 <?php
-                foreach ($materiais as $material) {
-                    if ($material->status_aprovacao === 'reprovado') {
-                        echo gma_render_material_card($material);
+                if (!empty($materiais)) {
+                    foreach ($materiais as $material) {
+                        if ($material->status_aprovacao === 'reprovado') {
+                            echo gma_render_material_card($material);
+                        }
                     }
                 }
                 ?>
             </div>
         </div>
 
+        <!-- Pending Materials -->
         <div class="gma-card" data-status="pendente">
             <h2 class="column-header pending">Para Edição</h2>
             <div class="materials-list">
                 <?php
-                foreach ($materiais as $material) {
-                    if ($material->status_aprovacao === 'pendente') {
-                        echo gma_render_material_card($material);
+                if (!empty($materiais)) {
+                    foreach ($materiais as $material) {
+                        if ($material->status_aprovacao === 'pendente') {
+                            echo gma_render_material_card($material);
+                        }
                     }
                 }
                 ?>
@@ -78,6 +88,7 @@ if (WP_DEBUG) {
     </div>
 </div>
 
+<!-- CSS -->
 <style>
 :root {
     --primary-color: #6e8efb;
@@ -269,9 +280,66 @@ if (WP_DEBUG) {
         width: 100%;
     }
 }
+
+@media screen and (max-width: 480px) {
+    .material-carousel {
+        height: 200px;
+    }
+    
+    .material-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .button {
+        width: 100%;
+        text-align: center;
+    }
+}
 </style>
 
+<!-- JavaScript -->
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Swiper instances
+    const swipers = document.querySelectorAll('.material-carousel');
+    swipers.forEach(function(element) {
+        new Swiper(element, {
+            slidesPerView: 1,
+            spaceBetween: 30,
+            loop: true,
+            autoplay: {
+                delay: 3000,
+                disableOnInteraction: false,
+            },
+            pagination: {
+                el: element.querySelector('.swiper-pagination'),
+                clickable: true,
+            },
+            navigation: {
+                nextEl: element.querySelector('.swiper-button-next'),
+                prevEl: element.querySelector('.swiper-button-prev'),
+            },
+        });
+    });
+
+    // Initialize video thumbnails
+    document.querySelectorAll('.video-thumbnail').forEach(thumbnail => {
+        thumbnail.addEventListener('click', function() {
+            const videoUrl = this.dataset.videoUrl;
+            const videoElement = document.createElement('video');
+            videoElement.src = videoUrl;
+            videoElement.controls = true;
+            videoElement.autoplay = true;
+            videoElement.className = 'material-video';
+            videoElement.preload = 'metadata';
+            
+            this.parentElement.replaceChild(videoElement, this);
+        });
+    });
+});
+
+// Filter functionality
 jQuery(document).ready(function($) {
     function filterMaterials() {
         const statusFilter = $('#filter-status').val();
@@ -297,35 +365,12 @@ jQuery(document).ready(function($) {
     }
 
     $('#filter-status, #filter-tipo, #filter-campanha-nome').on('change keyup', filterMaterials);
-
-    // Debug
-    console.log('Swiper disponível:', typeof Swiper !== 'undefined');
-    console.log('jQuery disponível:', typeof jQuery !== 'undefined');
-});
-
-jQuery(window).on('load', function() {
-    const swipers = document.querySelectorAll('.material-carousel');
-    if (swipers.length > 0) {
-        swipers.forEach(function(element) {
-            new Swiper(element, {
-                slidesPerView: 1,
-                spaceBetween: 30,
-                loop: true,
-                pagination: {
-                    el: '.swiper-pagination',
-                    clickable: true,
-                },
-                navigation: {
-                    nextEl: '.swiper-button-next',
-                    prevEl: '.swiper-button-prev',
-                },
-            });
-        });
-    }
 });
 </script>
 
 <?php
+// The rest of your PHP functions (gma_render_material_card and gma_render_action_buttons) 
+// remain the same as they are working correctly
 function gma_render_material_card($material) {
     if (!is_object($material)) {
         return '';
@@ -506,24 +551,3 @@ function gma_render_action_buttons($material, $is_aprovacao) {
     return ob_get_clean();
 }
 ?>
-
-<script>
-jQuery(document).ready(function($) {
-    // Inicializar Swiper para cada carrossel
-    $('.material-carousel').each(function() {
-        new Swiper(this, {
-            slidesPerView: 1,
-            spaceBetween: 30,
-            loop: true,
-            pagination: {
-                el: '.swiper-pagination',
-                clickable: true,
-            },
-            navigation: {
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
-            },
-        });
-    });
-});
-</script>
