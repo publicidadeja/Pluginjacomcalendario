@@ -255,48 +255,91 @@ jQuery(document).ready(function($) {
 
     // Validação do formulário
     $('#gma-material-form').on('submit', function(e) {
-        var isValid = true;
+    e.preventDefault();
+    var isValid = true;
+    var tipoMidia = $('#tipo_midia').val();
 
-        // Verifica se o campo "Imagem" é obrigatório
-        if ($('#tipo_midia').val() === 'imagem') {
-            $(this).find('[required]').each(function() {
-                if (!$(this).val()) {
-                    isValid = false;
-                    $(this).addClass('error').shake();
-                } else {
-                    $(this).removeClass('error');
-                }
-            });
-        } else {
-            // Se o tipo de mídia for "Carrossel", verifica se os campos obrigatórios estão preenchidos
-            $(this).find('[required]').not('#gma-imagem-url').each(function() {
-                if (!$(this).val()) {
-                    isValid = false;
-                    $(this).addClass('error').shake();
-                } else {
-                    $(this).removeClass('error');
-                }
-            });
-        }
+    // Remove previous error states
+    $('.error').removeClass('error');
 
-        if (!isValid) {
-            e.preventDefault();
-            alert('Por favor, preencha todos os campos obrigatórios.');
+    // Common required fields validation (campanha_id and copy)
+    var commonFields = ['#campanha_id', '#copy'];
+    commonFields.forEach(function(field) {
+        if (!$(field).val()) {
+            $(field).addClass('error').shake();
+            isValid = false;
         }
     });
 
-    // Efeito shake para campos com erro
-    $.fn.shake = function() {
-        this.each(function() {
-            $(this).css('position', 'relative');
-            for(var i = 0; i < 3; i++) {
-                $(this).animate({left: -10}, 50)
-                       .animate({left: 10}, 50)
-                       .animate({left: 0}, 50);
+    // Specific validation based on media type
+    switch(tipoMidia) {
+        case 'imagem':
+            if (!$('#gma-imagem-url').val()) {
+                $('#gma-imagem-url').addClass('error').shake();
+                isValid = false;
             }
+            break;
+
+        case 'carrossel':
+            // Check if at least one image was added to carrossel
+            if ($('#carrossel-preview img').length === 0) {
+                $('#carrossel-container').addClass('error').shake();
+                isValid = false;
+            }
+            break;
+
+        case 'video':
+            if (!$('#gma-video-url').val()) {
+                $('#gma-video-url').addClass('error').shake();
+                isValid = false;
+            }
+            break;
+    }
+
+    // Check if Canva link is required for marketing campaigns
+    var campanhaType = $('#campanha_id option:selected').data('tipo');
+    if (campanhaType === 'marketing' && $('#link_canva').val() === '') {
+        $('#link_canva').addClass('error').shake();
+        isValid = false;
+    }
+
+    if (!isValid) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Campos Obrigatórios',
+            text: 'Por favor, preencha todos os campos obrigatórios.',
+            confirmButtonColor: '#3085d6'
         });
-    };
+        return false;
+    }
+
+    // If valid, prepare form data for submission
+    if (tipoMidia === 'carrossel') {
+        // Add carrossel images to form
+        $('#carrossel-preview img').each(function(index) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'carrossel_images[]',
+                value: $(this).attr('src')
+            }).appendTo(this);
+        });
+    }
+
+    // Submit the form
+    this.submit();
 });
+
+// Efeito shake para campos com erro
+$.fn.shake = function() {
+    return this.each(function() {
+        $(this).css('position', 'relative');
+        for(var i = 0; i < 3; i++) {
+            $(this).animate({left: -10}, 50)
+                   .animate({left: 10}, 50)
+                   .animate({left: 0}, 50);
+        }
+    });
+};
 </script>
 
 <style>
