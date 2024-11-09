@@ -5,10 +5,6 @@ if (!defined('ABSPATH')) {
 
 wp_enqueue_style('gma-admin-style', plugins_url('/assets/css/admin-style.css', dirname(__FILE__)));
 wp_enqueue_script('gma-admin-script', plugins_url('/assets/js/admin-script.js', dirname(__FILE__)), array('jquery'), '1.0', true);
-// Adicionar Slick Slider
-wp_enqueue_style('slick', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css');
-wp_enqueue_style('slick-theme', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css');
-wp_enqueue_script('slick', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js', array('jquery'), '1.8.1', true);
 ?>
 
 <div class="wrap">
@@ -158,30 +154,12 @@ wp_enqueue_script('slick', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/sl
     width: 100%;
     max-width: 300px;
     height: auto;
-    position: relative; /* Para posicionar o ícone de vídeo */
 }
 
 .material-image img {
     width: 100%;
     height: auto;
     display: block;
-}
-
-.material-image .video-icon {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.5);
-    color: white;
-    padding: 10px;
-    border-radius: 50%;
-    font-size: 20px;
-    display: none; /* Oculto por padrão */
-}
-
-.material-image .video-icon.show {
-    display: block; /* Exibido quando é um vídeo */
 }
 
 .material-info {
@@ -255,87 +233,6 @@ wp_enqueue_script('slick', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/sl
         width: 100%;
     }
 }
-  
-  /* Estilos para o card do material */
-.material-card {
-    margin-bottom: 20px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.material-content {
-    width: 100%;
-    position: relative;
-}
-
-/* Estilos para imagens e vídeos */
-.material-media {
-    width: 100%;
-    height: auto;
-    max-height: 400px;
-    object-fit: contain;
-    display: block;
-}
-
-/* Estilos para o carrossel */
-.material-carousel {
-    width: 100%;
-    position: relative;
-}
-
-.material-carousel img {
-    width: 100%;
-    height: auto;
-    max-height: 400px;
-    object-fit: contain;
-    display: block;
-}
-
-/* Estilos para informações do material */
-.material-info {
-    padding: 15px;
-}
-
-/* Responsividade */
-@media screen and (max-width: 768px) {
-    .material-media,
-    .material-carousel img {
-        max-height: 300px;
-    }
-}
-  
-  /* Estilos para o carrossel */
-.material-carousel {
-    width: 100%;
-    margin: 0 auto;
-}
-
-.material-carousel .slick-slide {
-    padding: 0;
-    position: relative;
-}
-
-.material-carousel .slick-prev,
-.material-carousel .slick-next {
-    z-index: 1;
-}
-
-.material-carousel .slick-prev {
-    left: 10px;
-}
-
-.material-carousel .slick-next {
-    right: 10px;
-}
-
-.material-carousel img {
-    width: 100%;
-    height: auto;
-    max-height: 400px;
-    object-fit: contain;
-}
-  
 </style>
 
 <script>
@@ -370,35 +267,32 @@ jQuery(document).ready(function($) {
 
 <?php
 function gma_render_material_card($material) {
+    $is_aprovacao = $material->tipo_campanha === 'aprovacao';
+    // Get campaign name using the campaign_id from material
+    $campanha = gma_obter_campanha($material->campanha_id);
+    $nome_campanha = $campanha ? $campanha->nome : 'Campanha não encontrada';
+
     ob_start();
     ?>
-    <div class="material-card" data-status="<?php echo esc_attr($material->status_aprovacao); ?>">
-        <div class="material-content">
-            <?php if ($material->tipo_midia === 'video'): ?>
-                <div class="video-container">
-                    <div class="video-thumbnail" data-video-url="<?php echo esc_url($material->video_url); ?>">
-                        <?php 
-                        // Gerar thumbnail do vídeo
-                        $video_thumb = get_post_meta(attachment_url_to_postid($material->video_url), '_thumbnail_id', true);
-                        $thumb_url = $video_thumb ? wp_get_attachment_image_url($video_thumb, 'large') : '';
-                        ?>
-                        <img src="<?php echo $thumb_url ? esc_url($thumb_url) : plugins_url('/assets/images/video-placeholder.jpg', dirname(__FILE__)); ?>" alt="Video thumbnail">
-                        <div class="play-button">▶</div>
-                    </div>
-                </div>
-            <?php elseif ($material->tipo_midia === 'carrossel'): ?>
-                <div class="material-carousel">
-                    <?php
-                    $imagens_carrossel = gma_obter_imagens_carrossel($material->id);
-                    foreach ($imagens_carrossel as $imagem): ?>
-                        <div class="carousel-slide">
-                            <img src="<?php echo esc_url($imagem->imagem_url); ?>" alt="Imagem carrossel">
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php else: ?>
-                <img src="<?php echo esc_url($material->imagem_url); ?>" alt="Material" class="material-media">
-            <?php endif; ?>
+    <div class="material-card <?php echo $is_aprovacao ? 'aprovacao' : 'marketing'; ?>"
+         data-status="<?php echo esc_attr($material->status_aprovacao); ?>"
+         data-tipo="<?php echo esc_attr($material->tipo_campanha); ?>"
+         data-campanha="<?php echo esc_attr($material->campanha_id); ?>">
+        <!-- Add campaign name here -->
+        <div class="campaign-name">
+            <?php echo esc_html($nome_campanha); ?>
+        </div>
+        <div class="material-image">
+            <img src="<?php echo esc_url($material->imagem_url); ?>" alt="Material">
+        </div>
+        <div class="material-info">
+            <span class="campaign-type <?php echo $material->tipo_campanha; ?>">
+                <?php echo $is_aprovacao ? 'Aprovação' : 'Marketing'; ?>
+            </span>
+            <p class="material-copy"><?php echo wp_kses_post(wp_trim_words($material->copy, 10)); ?></p>
+            <div class="material-actions">
+                <?php echo gma_render_action_buttons($material, $is_aprovacao); ?>
+            </div>
         </div>
     </div>
     <?php
@@ -420,19 +314,3 @@ function gma_render_action_buttons($material, $is_aprovacao) {
     return ob_get_clean();
 }
 ?>
-<script>
-jQuery(document).ready(function($) {
-    // Inicializar Slick para cada carrossel
-    $('.material-carousel').slick({
-        dots: true,
-        infinite: true,
-        speed: 500,
-        slidesToShow: 1,
-        adaptiveHeight: true,
-        arrows: true,
-        autoplay: false,
-        prevArrow: '<button type="button" class="slick-prev">Previous</button>',
-        nextArrow: '<button type="button" class="slick-next">Next</button>'
-    });
-});
-</script>
