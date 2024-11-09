@@ -141,3 +141,15 @@
     });
 
 })(jQuery);
+
+// Manipulador de clique para vídeos
+$(document).on('click', '.video-thumbnail', function() {
+    const videoUrl = $(this).data('video-url');
+    const videoElement = `
+        <video controls autoplay class="material-media">
+            <source src="${videoUrl}" type="video/mp4">
+            Seu navegador não suporta o elemento de vídeo.
+        </video>
+    `;
+    $(this).replaceWith(videoElement);
+});
