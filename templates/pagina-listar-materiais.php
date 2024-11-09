@@ -375,25 +375,30 @@ function gma_render_material_card($material) {
     <div class="material-card" data-status="<?php echo esc_attr($material->status_aprovacao); ?>">
         <div class="material-content">
             <?php if ($material->tipo_midia === 'video'): ?>
-                <video controls class="material-media">
-                    <source src="<?php echo esc_url($material->video_url); ?>" type="video/mp4">
-                </video>
+                <div class="video-container">
+                    <div class="video-thumbnail" data-video-url="<?php echo esc_url($material->video_url); ?>">
+                        <?php 
+                        // Gerar thumbnail do vídeo
+                        $video_thumb = get_post_meta(attachment_url_to_postid($material->video_url), '_thumbnail_id', true);
+                        $thumb_url = $video_thumb ? wp_get_attachment_image_url($video_thumb, 'large') : '';
+                        ?>
+                        <img src="<?php echo $thumb_url ? esc_url($thumb_url) : plugins_url('/assets/images/video-placeholder.jpg', dirname(__FILE__)); ?>" alt="Video thumbnail">
+                        <div class="play-button">▶</div>
+                    </div>
+                </div>
             <?php elseif ($material->tipo_midia === 'carrossel'): ?>
                 <div class="material-carousel">
                     <?php
                     $imagens_carrossel = gma_obter_imagens_carrossel($material->id);
                     foreach ($imagens_carrossel as $imagem): ?>
-                        <img src="<?php echo esc_url($imagem->imagem_url); ?>" alt="Imagem carrossel">
+                        <div class="carousel-slide">
+                            <img src="<?php echo esc_url($imagem->imagem_url); ?>" alt="Imagem carrossel">
+                        </div>
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
                 <img src="<?php echo esc_url($material->imagem_url); ?>" alt="Material" class="material-media">
             <?php endif; ?>
-            
-            <div class="material-info">
-                <p class="material-copy"><?php echo wp_kses_post($material->copy); ?></p>
-                <!-- Resto do código... -->
-            </div>
         </div>
     </div>
     <?php
@@ -417,7 +422,7 @@ function gma_render_action_buttons($material, $is_aprovacao) {
 ?>
 <script>
 jQuery(document).ready(function($) {
-    // Inicializar Slick Slider
+    // Inicializar Slick para cada carrossel
     $('.material-carousel').slick({
         dots: true,
         infinite: true,
@@ -425,9 +430,9 @@ jQuery(document).ready(function($) {
         slidesToShow: 1,
         adaptiveHeight: true,
         arrows: true,
-        autoplay: false
+        autoplay: false,
+        prevArrow: '<button type="button" class="slick-prev">Previous</button>',
+        nextArrow: '<button type="button" class="slick-next">Next</button>'
     });
 });
 </script>
-<?php
-?>
