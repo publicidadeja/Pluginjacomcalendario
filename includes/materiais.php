@@ -6,30 +6,30 @@ function gma_criar_material($campanha_id, $midias, $copy, $link_canva = '', $tip
     $tabela = $wpdb->prefix . 'gma_materiais';
     
     if ($tipo_midia === 'carrossel') {
-        // Lógica para carrossel
-        $imagens = is_array($midias) ? $midias : array($midias);
-        $material_id = null;
+    // Lógica para carrossel
+    $imagens = is_array($midias) ? $midias : array($midias);
+    $material_id = null;
+    
+    foreach ($imagens as $index => $imagem) {
+        $dados = array(
+            'campanha_id' => $campanha_id,
+            'imagem_url' => $imagem,
+            'copy' => $copy,
+            'link_canva' => $link_canva,
+            'tipo_midia' => $tipo_midia,
+            'ordem' => $index
+        );
         
-        foreach ($imagens as $index => $imagem) {
-            $dados = array(
-                'campanha_id' => $campanha_id,
-                'imagem_url' => $imagem,
-                'copy' => $copy,
-                'link_canva' => $link_canva,
-                'tipo_midia' => $tipo_midia,
-                'ordem' => $index
-            );
-            
-            if ($index === 0) {
-                $wpdb->insert($tabela, $dados);
-                $material_id = $wpdb->insert_id;
-            } else {
-                $dados['material_principal_id'] = $material_id;
-                $wpdb->insert($tabela, $dados);
-            }
+        if ($index === 0) {
+            $wpdb->insert($tabela, $dados);
+            $material_id = $wpdb->insert_id;
+        } else {
+            $dados['material_principal_id'] = $material_id;
+            $wpdb->insert($tabela, $dados);
         }
-        return $material_id;
-    } else {
+    }
+    return $material_id;
+} else {
         // Lógica para imagem única ou vídeo
         $dados = array(
             'campanha_id' => $campanha_id,
