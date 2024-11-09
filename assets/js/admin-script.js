@@ -134,3 +134,33 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+jQuery(document).ready(function($) {
+    $('#gma-material-form').on('submit', function(e) {
+        e.preventDefault(); // Previne o envio normal do formulário
+        
+        // Mostra mensagem de carregamento
+        alert('Enviando formulário...'); // Temporário para teste
+        
+        var formData = new FormData(this);
+        formData.append('action', 'gma_criar_material');
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    window.location.href = response.data.redirect;
+                } else {
+                    alert('Erro ao criar material: ' + response.data.message);
+                }
+            },
+            error: function() {
+                alert('Erro ao enviar formulário');
+            }
+        });
+    });
+});
