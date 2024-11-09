@@ -1,5 +1,22 @@
 <?php
 if (!defined('ABSPATH')) {
+  // Adicione esta função no arquivo pagina-listar-materiais.php logo após a verificação de ABSPATH
+
+function gma_enqueue_material_scripts() {
+    // Swiper JS
+    wp_enqueue_style('swiper-bundle', 'https://unpkg.com/swiper/swiper-bundle.min.css', array(), '7.0.0');
+    wp_enqueue_script('swiper-bundle', 'https://unpkg.com/swiper/swiper-bundle.min.js', array('jquery'), '7.0.0', true);
+    
+    // Custom scripts
+    wp_enqueue_script('gma-material-list', plugins_url('/assets/js/material-list.js', dirname(__FILE__)), array('jquery', 'swiper-bundle'), '1.0.0', true);
+    
+    // Localize script
+    wp_localize_script('gma-material-list', 'gmaVars', array(
+        'ajaxurl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('gma_material_nonce')
+    ));
+}
+add_action('admin_enqueue_scripts', 'gma_enqueue_material_scripts');
     exit;
 }
 
@@ -389,6 +406,9 @@ function gma_render_material_card($material) {
         
         <div class="campaign-name">
             <?php echo esc_html($nome_campanha); ?>
+            <span class="campaign-status <?php echo esc_attr($material->status_aprovacao); ?>">
+                <?php echo esc_html(ucfirst($material->status_aprovacao)); ?>
+            </span>
         </div>
 
         <div class="material-image">
@@ -404,7 +424,7 @@ function gma_render_material_card($material) {
                                 <?php foreach ($imagens_carrossel as $imagem) : ?>
                                     <div class="swiper-slide">
                                         <img src="<?php echo esc_url($imagem->imagem_url); ?>" 
-                                             alt="Material" 
+                                             alt="<?php echo esc_attr($nome_campanha); ?>" 
                                              class="carousel-image"
                                              loading="lazy">
                                     </div>
@@ -422,11 +442,16 @@ function gma_render_material_card($material) {
                     if (!empty($material->video_url)) {
                         ?>
                         <div class="video-container">
-                            <video controls class="material-video" preload="metadata">
+                            <video controls class="material-video" preload="metadata" poster="<?php echo esc_url($material->thumbnail_url); ?>">
                                 <source src="<?php echo esc_url($material->video_url); ?>" type="video/mp4">
                                 <source src="<?php echo esc_url($material->video_url); ?>" type="video/webm">
                                 Seu navegador não suporta o elemento de vídeo.
                             </video>
+                            <div class="video-overlay">
+                                <button class="play-button">
+                                    <span class="dashicons dashicons-controls-play"></span>
+                                </button>
+                            </div>
                         </div>
                         <?php
                     }
@@ -434,10 +459,14 @@ function gma_render_material_card($material) {
 
                 default: // imagem única
                     if (!empty($material->imagem_url)) {
-                        echo '<img src="' . esc_url($material->imagem_url) . '" 
-                                  alt="Material" 
-                                  class="single-image"
-                                  loading="lazy">';
+                        ?>
+                        <div class="single-image-container">
+                            <img src="<?php echo esc_url($material->imagem_url); ?>" 
+                                 alt="<?php echo esc_attr($nome_campanha); ?>" 
+                                 class="single-image"
+                                 loading="lazy">
+                        </div>
+                        <?php
                     }
                     break;
             }
@@ -449,7 +478,12 @@ function gma_render_material_card($material) {
                 <?php echo esc_html($is_aprovacao ? 'Aprovação' : 'Marketing'); ?>
             </span>
             <?php if (!empty($material->copy)) : ?>
-                <p class="material-copy"><?php echo wp_kses_post(wp_trim_words($material->copy, 10)); ?></p>
+                <div class="material-copy">
+                    <p><?php echo wp_kses_post(wp_trim_words($material->copy, 10)); ?></p>
+                    <?php if (strlen($material->copy) > 55) : ?>
+                        <button class="show-more-btn">Ver mais</button>
+                    <?php endif; ?>
+                </div>
             <?php endif; ?>
             <div class="material-actions">
                 <?php echo gma_render_action_buttons($material, $is_aprovacao); ?>
@@ -464,7 +498,33 @@ function gma_render_material_card($material) {
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         overflow: hidden;
+        transition: transform 0.2s ease;
     }
+
+    .material-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .campaign-name {
+        padding: 12px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .campaign-status {
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-weight: 500;
+    }
+
+    .campaign-status.aprovado { background: #28a745; color: white; }
+    .campaign-status.reprovado { background: #dc3545; color: white; }
+    .campaign-status.pendente { background: #ffc107; color: #000; }
 
     .material-image {
         position: relative;
@@ -482,6 +542,42 @@ function gma_render_material_card($material) {
         padding-bottom: 56.25%;
         height: 0;
         overflow: hidden;
+        background: #000;
+    }
+
+    .video-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.3);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .video-container:hover .video-overlay {
+        opacity: 1;
+    }
+
+    .play-button {
+        background: rgba(255,255,255,0.9);
+        border: none;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease;
+    }
+
+    .play-button:hover {
+        transform: scale(1.1);
     }
 
     .material-video {
@@ -492,10 +588,19 @@ function gma_render_material_card($material) {
         height: 100%;
     }
 
+    .single-image-container {
+        position: relative;
+        overflow: hidden;
+        padding-bottom: 75%;
+    }
+
     .single-image {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
-        height: auto;
-        display: block;
+        height: 100%;
+        object-fit: cover;
     }
 
     .carousel-image {
@@ -503,11 +608,41 @@ function gma_render_material_card($material) {
         height: 100%;
         object-fit: cover;
     }
+
+    .material-info {
+        padding: 15px;
+    }
+
+    .material-copy {
+        margin: 10px 0;
+        position: relative;
+    }
+
+    .show-more-btn {
+        background: none;
+        border: none;
+        color: #007bff;
+        padding: 0;
+        font-size: 12px;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .material-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    @media (max-width: 768px) {
+        .material-carousel {
+            height: 200px;
+        }
+    }
     </style>
     <?php
     return ob_get_clean();
 }
-
 function gma_render_action_buttons($material, $is_aprovacao) {
     $edit_url = esc_url(admin_url('admin.php?page=gma-editar-material&id=' . $material->id . '&tipo=' . ($is_aprovacao ? 'aprovacao' : 'marketing')));
     $delete_url = wp_nonce_url(
