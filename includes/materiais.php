@@ -5,61 +5,45 @@ function gma_criar_material($campanha_id, $midias, $copy, $link_canva = '', $tip
     global $wpdb;
     $tabela = $wpdb->prefix . 'gma_materiais';
     
-    // Start transaction
-    $wpdb->query('START TRANSACTION');
-    
-    try {
-        if ($tipo_midia === 'carrossel') {
-            // Handle multiple images
-            $imagens = is_array($midias) ? $midias : array($midias);
-            $material_id = null;
-            
-            foreach ($imagens as $index => $imagem) {
-                $dados = array(
-                    'campanha_id' => $campanha_id,
-                    'imagem_url' => $imagem,
-                    'copy' => $copy,
-                    'link_canva' => $link_canva,
-                    'tipo_midia' => $tipo_midia,
-                    'ordem' => $index,
-                    'data_criacao' => current_time('mysql')
-                );
-                
-                if ($index === 0) {
-                    $wpdb->insert($tabela, $dados);
-                    $material_id = $wpdb->insert_id;
-                } else {
-                    $dados['material_principal_id'] = $material_id;
-                    $wpdb->insert($tabela, $dados);
-                }
-            }
-            
-        } else {
-            // Handle single image or video
+    if ($tipo_midia === 'carrossel') {
+        // Lógica para carrossel
+        $imagens = is_array($midias) ? $midias : array($midias);
+        $material_id = null;
+        
+        foreach ($imagens as $index => $imagem) {
             $dados = array(
                 'campanha_id' => $campanha_id,
-                'imagem_url' => $tipo_midia === 'video' ? '' : $midias,
-                'video_url' => $tipo_midia === 'video' ? $midias : '',
+                'imagem_url' => $imagem,
                 'copy' => $copy,
                 'link_canva' => $link_canva,
                 'tipo_midia' => $tipo_midia,
-                'data_criacao' => current_time('mysql')
+                'ordem' => $index
             );
             
-            $wpdb->insert($tabela, $dados);
-            $material_id = $wpdb->insert_id;
+            if ($index === 0) {
+                $wpdb->insert($tabela, $dados);
+                $material_id = $wpdb->insert_id;
+            } else {
+                $dados['material_principal_id'] = $material_id;
+                $wpdb->insert($tabela, $dados);
+            }
         }
-        
-        $wpdb->query('COMMIT');
         return $material_id;
+    } else {
+        // Lógica para imagem única ou vídeo
+        $dados = array(
+            'campanha_id' => $campanha_id,
+            'imagem_url' => $tipo_midia === 'video' ? '' : $midias,
+            'video_url' => $tipo_midia === 'video' ? $midias : '',
+            'copy' => $copy,
+            'link_canva' => $link_canva,
+            'tipo_midia' => $tipo_midia
+        );
         
-    } catch (Exception $e) {
-        $wpdb->query('ROLLBACK');
-        error_log('Erro ao criar material: ' . $e->getMessage());
-        return false;
+        $wpdb->insert($tabela, $dados);
+        return $wpdb->insert_id;
     }
 }
-
 function gma_verificar_material_existente($campanha_id, $imagem_url, $copy, $link_canva) {
     global $wpdb;
     $tabela = $wpdb->prefix . 'gma_materiais';
