@@ -254,3 +254,23 @@
         });
     });
 })(jQuery);
+
+// Em /assets/js/gma-script.js
+$(document).ready(function() {
+    // Inicializar Swiper para cada carrossel
+    $('.material-carousel').each(function() {
+        new Swiper(this, {
+            slidesPerView: 1,
+            spaceBetween: 30,
+            loop: true,
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+        });
+    });
+});
