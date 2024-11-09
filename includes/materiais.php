@@ -624,9 +624,10 @@ function gma_obter_imagens_carrossel($material_id) {
     
     $query = $wpdb->prepare(
         "SELECT imagem_url, ordem
-         FROM {$wpdb->prefix}gma_material_imagens
-         WHERE material_id = %d
+         FROM {$wpdb->prefix}gma_materiais
+         WHERE id = %d OR material_principal_id = %d
          ORDER BY ordem ASC",
+        $material_id,
         $material_id
     );
     
