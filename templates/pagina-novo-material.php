@@ -4,14 +4,19 @@ if (!defined('ABSPATH')) exit;
 // Carrega o Media Uploader
 wp_enqueue_media();
 
-// Carrega o jQuery
+// Carrega o jQuery e script admin
 wp_enqueue_script('jquery');
 wp_enqueue_script('gma-admin-script', plugins_url('/assets/js/admin-script.js', dirname(__FILE__)), array('jquery'), '1.0', true);
 
-// Localiza os scripts para AJAX
-wp_localize_script('jquery', 'gma_ajax', array(
+// Configura todas as variáveis necessárias para o JavaScript
+wp_localize_script('gma-admin-script', 'gmaData', array(
     'ajaxurl' => admin_url('admin-ajax.php'),
-    'nonce' => wp_create_nonce('gma_copy_suggestions')
+    'nonce' => wp_create_nonce('gma_novo_material'),
+    'wpMediaTitle' => 'Selecione ou envie uma imagem',
+    'wpMediaButton' => 'Usar esta imagem',
+    'copySuggestions' => array(
+        'nonce' => wp_create_nonce('gma_copy_suggestions')
+    )
 ));
 ?>
 
