@@ -420,27 +420,6 @@ function gma_render_material_card($material) {
                             <div class="swiper-button-next"></div>
                             <div class="swiper-button-prev"></div>
                         </div>
-                        <script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            new Swiper('#<?php echo esc_js($carousel_id); ?>', {
-                                slidesPerView: 1,
-                                spaceBetween: 30,
-                                loop: true,
-                                autoplay: {
-                                    delay: 3000,
-                                    disableOnInteraction: false,
-                                },
-                                pagination: {
-                                    el: '.swiper-pagination',
-                                    clickable: true,
-                                },
-                                navigation: {
-                                    nextEl: '.swiper-button-next',
-                                    prevEl: '.swiper-button-prev',
-                                },
-                            });
-                        });
-                        </script>
                         <?php
                     }
                     break;
