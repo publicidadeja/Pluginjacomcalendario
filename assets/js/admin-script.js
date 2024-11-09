@@ -136,17 +136,16 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 jQuery(document).ready(function($) {
+    // Manipulador do formulário
     $('#gma-material-form').on('submit', function(e) {
-        e.preventDefault(); // Previne o envio normal do formulário
-        
-        // Mostra mensagem de carregamento
-        alert('Enviando formulário...'); // Temporário para teste
+        e.preventDefault();
         
         var formData = new FormData(this);
         formData.append('action', 'gma_criar_material');
+        formData.append('nonce', gmaData.nonce);
         
         $.ajax({
-            url: ajaxurl,
+            url: gmaData.ajaxurl,
             type: 'POST',
             data: formData,
             processData: false,
@@ -162,5 +161,33 @@ jQuery(document).ready(function($) {
                 alert('Erro ao enviar formulário');
             }
         });
+    });
+
+    // Inicialização do Media Uploader
+    var mediaUploader;
+    $('#gma-upload-btn').on('click', function(e) {
+        e.preventDefault();
+        
+        if (mediaUploader) {
+            mediaUploader.open();
+            return;
+        }
+
+        mediaUploader = wp.media({
+            title: gmaData.wpMediaTitle,
+            button: {
+                text: gmaData.wpMediaButton
+            },
+            multiple: false
+        });
+
+        mediaUploader.on('select', function() {
+            var attachment = mediaUploader.state().get('selection').first().toJSON();
+            $('#gma-imagem-url').val(attachment.url);
+            $('#gma-arquivo-id').val(attachment.id);
+            $('#gma-image-preview').html('<img src="' + attachment.url + '" alt="Preview">');
+        });
+
+        mediaUploader.open();
     });
 });
