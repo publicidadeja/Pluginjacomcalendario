@@ -6,6 +6,7 @@ wp_enqueue_media();
 
 // Carrega o jQuery
 wp_enqueue_script('jquery');
+wp_enqueue_script('gma-admin-script', plugins_url('/assets/js/admin-script.js', dirname(__FILE__)), array('jquery'), '1.0', true);
 
 // Localiza os scripts para AJAX
 wp_localize_script('jquery', 'gma_ajax', array(
@@ -458,7 +459,6 @@ jQuery(document).ready(function($) {
     });
 
     // Validação do formulário
-   // Validação do formulário
 $('#gma-material-form').on('submit', function(e) {
     e.preventDefault();
     
