@@ -6,14 +6,17 @@ function gma_criar_material($campanha_id, $midias, $copy, $link_canva = '', $tip
     $tabela = $wpdb->prefix . 'gma_materiais';
     
     if ($tipo_midia === 'carrossel') {
-    // Lógica para carrossel
-    $imagens = is_array($midias) ? $midias : array($midias);
+    // Verifica se $midias é um array válido
+    if (!is_array($midias) || empty($midias)) {
+        return false;
+    }
+    
     $material_id = null;
     
-    foreach ($imagens as $index => $imagem) {
+    foreach ($midias as $index => $imagem_url) {
         $dados = array(
             'campanha_id' => $campanha_id,
-            'imagem_url' => $imagem,
+            'imagem_url' => esc_url($imagem_url),
             'copy' => $copy,
             'link_canva' => $link_canva,
             'tipo_midia' => $tipo_midia,
@@ -21,16 +24,24 @@ function gma_criar_material($campanha_id, $midias, $copy, $link_canva = '', $tip
         );
         
         if ($index === 0) {
-            $wpdb->insert($tabela, $dados);
-            $material_id = $wpdb->insert_id;
+            // Insere o material principal
+            if ($wpdb->insert($tabela, $dados)) {
+                $material_id = $wpdb->insert_id;
+            } else {
+                return false;
+            }
         } else {
+            // Insere as imagens adicionais vinculadas ao material principal
             $dados['material_principal_id'] = $material_id;
-            $wpdb->insert($tabela, $dados);
+            if (!$wpdb->insert($tabela, $dados)) {
+                // Log de erro se a inserção falhar
+                error_log("Erro ao inserir imagem do carrossel: " . $wpdb->last_error);
+            }
         }
     }
+    
     return $material_id;
 } else {
-        // Lógica para imagem única ou vídeo
         $dados = array(
             'campanha_id' => $campanha_id,
             'imagem_url' => $tipo_midia === 'video' ? '' : $midias,
@@ -610,13 +621,16 @@ function gma_criar_versao_material($material_id, $nova_url, $descricao) {
 // Adicionar em materiais.php se ainda não existir
 function gma_obter_imagens_carrossel($material_id) {
     global $wpdb;
-    $tabela = $wpdb->prefix . 'gma_materiais';
     
-    return $wpdb->get_results($wpdb->prepare(
-        "SELECT * FROM $tabela WHERE material_principal_id = %d OR id = %d ORDER BY ordem ASC",
-        $material_id,
+    $query = $wpdb->prepare(
+        "SELECT imagem_url, ordem
+         FROM {$wpdb->prefix}gma_material_imagens
+         WHERE material_id = %d
+         ORDER BY ordem ASC",
         $material_id
-    ));
+    );
+    
+    return $wpdb->get_results($query);
 }
 // Função para exibir a notificação no painel do admin
 function gma_exibir_notificacao_admin($mensagem, $tipo = 'success') {
