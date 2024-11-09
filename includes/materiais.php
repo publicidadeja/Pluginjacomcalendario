@@ -57,22 +57,27 @@ function gma_criar_material($campanha_id, $midias, $copy, $link_canva = '', $tip
 }
 
 function gma_handle_criar_material() {
-    check_ajax_referer('gma_novo_material', 'gma_novo_material_nonce');
+    check_ajax_referer('gma_novo_material', 'nonce');
     
     $campanha_id = intval($_POST['campanha_id']);
     $tipo_midia = sanitize_text_field($_POST['tipo_midia']);
     $copy = sanitize_textarea_field($_POST['copy']);
-    $link_canva = isset($_POST['link_canva']) ? sanitize_url($_POST['link_canva']) : '';
-    $midias = $_POST['midias'];
+    $link_canva = isset($_POST['link_canva']) ? esc_url_raw($_POST['link_canva']) : '';
     
-    if ($tipo_midia === 'carrossel') {
-        $midias = json_decode(stripslashes($midias), true);
+    if ($tipo_midia === 'imagem') {
+        $midias = sanitize_url($_POST['imagem_url']);
+    } elseif ($tipo_midia === 'video') {
+        $midias = sanitize_url($_POST['video_url']);
+    } else {
+        $midias = array_map('sanitize_url', $_POST['carrossel_images']);
     }
     
     $resultado = gma_criar_material($campanha_id, $midias, $copy, $link_canva, $tipo_midia);
     
     if ($resultado) {
-        wp_send_json_success();
+        wp_send_json_success(array(
+            'redirect' => admin_url('admin.php?page=gma-materiais&message=created')
+        ));
     } else {
         wp_send_json_error(array('message' => 'Erro ao criar material'));
     }
