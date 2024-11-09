@@ -301,17 +301,12 @@ if (WP_DEBUG) {
 <!-- JavaScript -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Swiper instances
-    const swipers = document.querySelectorAll('.material-carousel');
-    swipers.forEach(function(element) {
+    // Inicializa todos os carrosséis
+    document.querySelectorAll('.material-carousel').forEach(function(element) {
         new Swiper(element, {
             slidesPerView: 1,
             spaceBetween: 30,
             loop: true,
-            autoplay: {
-                delay: 3000,
-                disableOnInteraction: false,
-            },
             pagination: {
                 el: element.querySelector('.swiper-pagination'),
                 clickable: true,
@@ -320,22 +315,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 nextEl: element.querySelector('.swiper-button-next'),
                 prevEl: element.querySelector('.swiper-button-prev'),
             },
+            autoplay: {
+                delay: 3000,
+                disableOnInteraction: false,
+            },
         });
     });
 
-    // Initialize video thumbnails
-    document.querySelectorAll('.video-thumbnail').forEach(thumbnail => {
-        thumbnail.addEventListener('click', function() {
-            const videoUrl = this.dataset.videoUrl;
-            const videoElement = document.createElement('video');
-            videoElement.src = videoUrl;
-            videoElement.controls = true;
-            videoElement.autoplay = true;
-            videoElement.className = 'material-video';
-            videoElement.preload = 'metadata';
-            
-            this.parentElement.replaceChild(videoElement, this);
-        });
+    // Inicializa os players de vídeo
+    document.querySelectorAll('.video-container').forEach(function(container) {
+        const video = container.querySelector('video');
+        if (video) {
+            video.addEventListener('loadedmetadata', function() {
+                container.style.paddingBottom = (video.videoHeight / video.videoWidth * 100) + '%';
+            });
+        }
     });
 });
 
