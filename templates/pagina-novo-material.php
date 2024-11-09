@@ -4,6 +4,9 @@ if (!defined('ABSPATH')) exit;
 // Carrega o Media Uploader
 wp_enqueue_media();
 
+// Carrega o jQuery
+wp_enqueue_script('jquery');
+
 // Localiza os scripts para AJAX
 wp_localize_script('jquery', 'gma_ajax', array(
     'ajaxurl' => admin_url('admin-ajax.php'),
@@ -455,47 +458,87 @@ jQuery(document).ready(function($) {
     });
 
     // Validação do formulário
-    $('#gma-material-form').on('submit', function(e) {
-        var isValid = true;
-        var tipoMidia = $('#tipo_midia').val();
+   // Validação do formulário
+$('#gma-material-form').on('submit', function(e) {
+    e.preventDefault();
+    
+    // Validação básica
+    var isValid = true;
+    var tipoMidia = $('#tipo_midia').val();
 
-        $('.error').removeClass('error');
+    // Validação dos campos obrigatórios
+    if (!$('#campanha_id').val() || !$('#copy').val()) {
+        isValid = false;
+        alert('Por favor, preencha todos os campos obrigatórios.');
+        return;
+    }
 
-        // Validação dos campos comuns
-        if (!$('#campanha_id').val() || !$('#copy').val()) {
-            isValid = false;
-            if (!$('#campanha_id').val()) $('#campanha_id').addClass('error');
-            if (!$('#copy').val()) $('#copy').addClass('error');
-        }
+    // Validação específica por tipo de mídia
+    switch(tipoMidia) {
+        case 'imagem':
+            if (!$('#gma-imagem-url').val()) {
+                isValid = false;
+                alert('Por favor, selecione uma imagem.');
+                return;
+            }
+            break;
+        case 'carrossel':
+            if ($('#carrossel-preview .carrossel-item').length === 0) {
+                isValid = false;
+                alert('Por favor, adicione pelo menos uma imagem ao carrossel.');
+                return;
+            }
+            break;
+        case 'video':
+            if (!$('#gma-video-url').val()) {
+                isValid = false;
+                alert('Por favor, selecione um vídeo.');
+                return;
+            }
+            break;
+    }
 
-        // Validação específica por tipo de mídia
-        switch(tipoMidia) {
-            case 'imagem':
-                if (!$('#gma-imagem-url').val()) {
-                    isValid = false;
-                    $('#gma-imagem-url').addClass('error');
-                }
-                break;
-            case 'carrossel':
-                if ($('#carrossel-preview .carrossel-item').length === 0) {
-                    isValid = false;
-                    $('#carrossel-container').addClass('error');
-                }
-                break;
-            case 'video':
-                if (!$('#gma-video-url').val()) {
-                    isValid = false;
-                    $('#gma-video-url').addClass('error');
-                }
-                break;
-        }
+    if (!isValid) {
+        return;
+    }
 
-        if (!isValid) {
-            e.preventDefault();
-            alert('Por favor, preencha todos os campos obrigatórios.');
-            return false;
+    // Se passou na validação, prepara os dados
+    var formData = new FormData(this);
+    formData.append('action', 'gma_criar_material');
+    formData.append('tipo_midia', tipoMidia);
+    
+    // Adiciona as URLs conforme o tipo de mídia
+    if (tipoMidia === 'carrossel') {
+        var carrosselImages = [];
+        $('#carrossel-preview .carrossel-item input').each(function() {
+            carrosselImages.push($(this).val());
+        });
+        formData.append('midias', JSON.stringify(carrosselImages));
+    } else if (tipoMidia === 'video') {
+        formData.append('midias', $('#gma-video-url').val());
+    } else {
+        formData.append('midias', $('#gma-imagem-url').val());
+    }
+    
+    // Envia o formulário
+    $.ajax({
+        url: gma_ajax.ajaxurl,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                window.location.href = '<?php echo admin_url("admin.php?page=gma-materiais&message=created"); ?>';
+            } else {
+                alert('Erro ao criar material: ' + (response.data ? response.data.message : 'Erro desconhecido'));
+            }
+        },
+        error: function() {
+            alert('Erro ao enviar o formulário');
         }
     });
+});
 
     // Obter sugestões da IA
     $('#get-suggestions').on('click', function() {
