@@ -6,8 +6,8 @@ wp_enqueue_media();
 
 // Localiza os scripts para AJAX
 wp_localize_script('jquery', 'gma_ajax', array(
-'ajaxurl' => admin_url('admin-ajax.php'),
-'nonce' => wp_create_nonce('gma_copy_suggestions')
+    'ajaxurl' => admin_url('admin-ajax.php'),
+    'nonce' => wp_create_nonce('gma_copy_suggestions')
 ));
 ?>
 
@@ -495,6 +495,43 @@ jQuery(document).ready(function($) {
             alert('Por favor, preencha todos os campos obrigatórios.');
             return false;
         }
+    });
+
+    // Obter sugestões da IA
+    $('#get-suggestions').on('click', function() {
+        const copy = $('#copy').val();
+        const button = $(this);
+        
+        if (!copy) {
+            alert('Por favor, insira algum texto primeiro.');
+            return;
+        }
+        
+        button.prop('disabled', true).text('Obtendo sugestões...');
+        
+        $.ajax({
+            url: gma_ajax.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'gma_get_copy_suggestions',
+                nonce: gma_ajax.nonce,
+                copy: copy
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#suggestions-content').html(response.data.suggestions);
+                    $('#suggestions-container').slideDown();
+                } else {
+                    alert('Falha ao obter sugestões. Tente novamente.');
+                }
+            },
+            error: function() {
+                alert('Erro ao conectar com o servidor.');
+            },
+            complete: function() {
+                button.prop('disabled', false).text('Obter Sugestões AI');
+            }
+        });
     });
 });
 </script>
