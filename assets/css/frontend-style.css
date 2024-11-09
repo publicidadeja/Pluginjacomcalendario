@@ -118,3 +118,57 @@
 .meu-plugin-fade-in {
     animation: fadeIn 1s ease-in;
 }
+
+/* Estilos para o carrossel */
+.material-carousel {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.carousel-slide {
+    position: relative;
+}
+
+.carousel-slide img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Estilos para vídeo */
+.video-container {
+    position: relative;
+    cursor: pointer;
+}
+
+.video-thumbnail {
+    position: relative;
+}
+
+.video-thumbnail img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.play-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    background: rgba(0,0,0,0.7);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    transition: all 0.3s ease;
+}
+
+.video-container:hover .play-button {
+    background: rgba(0,0,0,0.9);
+    transform: translate(-50%, -50%) scale(1.1);
+}
