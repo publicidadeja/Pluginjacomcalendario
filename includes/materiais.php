@@ -55,6 +55,30 @@ function gma_criar_material($campanha_id, $midias, $copy, $link_canva = '', $tip
         return $wpdb->insert_id;
     }
 }
+
+function gma_handle_criar_material() {
+    check_ajax_referer('gma_novo_material', 'gma_novo_material_nonce');
+    
+    $campanha_id = intval($_POST['campanha_id']);
+    $tipo_midia = sanitize_text_field($_POST['tipo_midia']);
+    $copy = sanitize_textarea_field($_POST['copy']);
+    $link_canva = isset($_POST['link_canva']) ? sanitize_url($_POST['link_canva']) : '';
+    $midias = $_POST['midias'];
+    
+    if ($tipo_midia === 'carrossel') {
+        $midias = json_decode(stripslashes($midias), true);
+    }
+    
+    $resultado = gma_criar_material($campanha_id, $midias, $copy, $link_canva, $tipo_midia);
+    
+    if ($resultado) {
+        wp_send_json_success();
+    } else {
+        wp_send_json_error(array('message' => 'Erro ao criar material'));
+    }
+}
+add_action('wp_ajax_gma_criar_material', 'gma_handle_criar_material');
+
 function gma_verificar_material_existente($campanha_id, $imagem_url, $copy, $link_canva) {
     global $wpdb;
     $tabela = $wpdb->prefix . 'gma_materiais';
@@ -631,7 +655,11 @@ function gma_obter_imagens_carrossel($material_id) {
         $material_id
     );
     
-    return $wpdb->get_results($query);
+    error_log("Query carrossel: " . $query);
+    $resultados = $wpdb->get_results($query);
+    error_log("Resultados carrossel: " . print_r($resultados, true));
+    
+    return $resultados;
 }
 // Função para exibir a notificação no painel do admin
 function gma_exibir_notificacao_admin($mensagem, $tipo = 'success') {
