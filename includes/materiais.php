@@ -606,6 +606,18 @@ function gma_criar_versao_material($material_id, $nova_url, $descricao) {
     ));
 }
 
+
+// Adicionar em materiais.php se ainda não existir
+function gma_obter_imagens_carrossel($material_id) {
+    global $wpdb;
+    $tabela = $wpdb->prefix . 'gma_materiais';
+    
+    return $wpdb->get_results($wpdb->prepare(
+        "SELECT * FROM $tabela WHERE material_principal_id = %d OR id = %d ORDER BY ordem ASC",
+        $material_id,
+        $material_id
+    ));
+}
 // Função para exibir a notificação no painel do admin
 function gma_exibir_notificacao_admin($mensagem, $tipo = 'success') {
     // Adicionar CSS para as notificações popup
