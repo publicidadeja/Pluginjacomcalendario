@@ -3,8 +3,16 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Enqueue necessário
 wp_enqueue_style('gma-admin-style', plugins_url('/assets/css/admin-style.css', dirname(__FILE__)));
 wp_enqueue_script('gma-admin-script', plugins_url('/assets/js/admin-script.js', dirname(__FILE__)), array('jquery'), '1.0', true);
+wp_enqueue_style('swiper-style', 'https://unpkg.com/swiper/swiper-bundle.min.css');
+wp_enqueue_script('swiper-script', 'https://unpkg.com/swiper/swiper-bundle.min.js', array('jquery'), null, true);
+
+// Debug mode
+if (WP_DEBUG) {
+    error_log('Materiais recebidos: ' . print_r($materiais, true));
+}
 ?>
 
 <div class="wrap">
@@ -71,7 +79,6 @@ wp_enqueue_script('gma-admin-script', plugins_url('/assets/js/admin-script.js', 
 </div>
 
 <style>
-/* Variáveis CSS */
 :root {
     --primary-color: #6e8efb;
     --secondary-color: #a777e3;
@@ -81,27 +88,19 @@ wp_enqueue_script('gma-admin-script', plugins_url('/assets/js/admin-script.js', 
     --box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Estilos gerais */
 .wrap {
     max-width: 1200px;
     margin: 20px auto;
     font-family: 'Roboto', Arial, sans-serif;
 }
 
-/* Filtros */
 .gma-filter {
     display: flex;
     gap: 15px;
     margin: 20px 0;
 }
 
-.gma-filter-select {
-    padding: 8px;
-    border-radius: var(--border-radius);
-    border: 1px solid #ddd;
-    min-width: 200px;
-}
-
+.gma-filter-select,
 .gma-filter-input {
     padding: 8px;
     border-radius: var(--border-radius);
@@ -109,7 +108,6 @@ wp_enqueue_script('gma-admin-script', plugins_url('/assets/js/admin-script.js', 
     min-width: 200px;
 }
 
-/* Grid e Cards */
 .gma-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -142,7 +140,6 @@ wp_enqueue_script('gma-admin-script', plugins_url('/assets/js/admin-script.js', 
     gap: 15px;
 }
 
-/* Material Card */
 .material-card {
     background: #fff;
     border-radius: var(--border-radius);
@@ -211,7 +208,8 @@ wp_enqueue_script('gma-admin-script', plugins_url('/assets/js/admin-script.js', 
 .delete-button {
     background-color: #f44336;
 }
-  .campaign-name {
+
+.campaign-name {
     background: #f5f5f5;
     padding: 10px;
     font-weight: bold;
@@ -223,13 +221,51 @@ wp_enqueue_script('gma-admin-script', plugins_url('/assets/js/admin-script.js', 
     letter-spacing: 1px;
 }
 
-/* Responsividade */
+.material-carousel {
+    width: 100%;
+    height: 300px;
+}
+
+.swiper-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-container {
+    width: 100%;
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+}
+
+.material-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.swiper-button-next,
+.swiper-button-prev {
+    color: #fff;
+    background: rgba(0,0,0,0.5);
+    padding: 30px;
+    border-radius: 50%;
+}
+
+.swiper-pagination-bullet-active {
+    background: var(--primary-color);
+}
+
 @media screen and (max-width: 782px) {
     .gma-filter {
         flex-direction: column;
     }
     
-    .gma-filter-select {
+    .gma-filter-select,
+    .gma-filter-input {
         width: 100%;
     }
 }
@@ -260,16 +296,43 @@ jQuery(document).ready(function($) {
         });
     }
 
-    // Event listeners para os filtros
     $('#filter-status, #filter-tipo, #filter-campanha-nome').on('change keyup', filterMaterials);
+
+    // Debug
+    console.log('Swiper disponível:', typeof Swiper !== 'undefined');
+    console.log('jQuery disponível:', typeof jQuery !== 'undefined');
+});
+
+jQuery(window).on('load', function() {
+    const swipers = document.querySelectorAll('.material-carousel');
+    if (swipers.length > 0) {
+        swipers.forEach(function(element) {
+            new Swiper(element, {
+                slidesPerView: 1,
+                spaceBetween: 30,
+                loop: true,
+                pagination: {
+                    el: '.swiper-pagination',
+                    clickable: true,
+                },
+                navigation: {
+                    nextEl: '.swiper-button-next',
+                    prevEl: '.swiper-button-prev',
+                },
+            });
+        });
+    }
 });
 </script>
 
 <?php
 function gma_render_material_card($material) {
-    $is_aprovacao = $material->tipo_campanha === 'aprovacao';
-    // Get campaign name using the campaign_id from material
-    $campanha = gma_obter_campanha($material->campanha_id);
+    if (!is_object($material)) {
+        return '';
+    }
+
+    $is_aprovacao = isset($material->tipo_campanha) ? $material->tipo_campanha === 'aprovacao' : false;
+    $campanha = isset($material->campanha_id) ? gma_obter_campanha($material->campanha_id) : null;
     $nome_campanha = $campanha ? $campanha->nome : 'Campanha não encontrada';
 
     ob_start();
@@ -278,13 +341,46 @@ function gma_render_material_card($material) {
          data-status="<?php echo esc_attr($material->status_aprovacao); ?>"
          data-tipo="<?php echo esc_attr($material->tipo_campanha); ?>"
          data-campanha="<?php echo esc_attr($material->campanha_id); ?>">
-        <!-- Add campaign name here -->
+        
         <div class="campaign-name">
             <?php echo esc_html($nome_campanha); ?>
         </div>
+
         <div class="material-image">
-            <img src="<?php echo esc_url($material->imagem_url); ?>" alt="Material">
+            <?php
+            if ($material->tipo_midia === 'carrossel') {
+                $imagens_carrossel = gma_obter_imagens_carrossel($material->id);
+                if (!empty($imagens_carrossel)) {
+                    echo '<div class="swiper-container material-carousel">';
+                    echo '<div class="swiper-wrapper">';
+                    foreach ($imagens_carrossel as $imagem) {
+                        echo '<div class="swiper-slide">';
+                        echo '<img src="' . esc_url($imagem->imagem_url) . '" alt="Material">';
+                        echo '</div>';
+                    }
+                    echo '</div>';
+                    echo '<div class="swiper-pagination"></div>';
+                    echo '<div class="swiper-button-next"></div>';
+                    echo '<div class="swiper-button-prev"></div>';
+                    echo '</div>';
+                }
+            } elseif ($material->tipo_midia === 'video') {
+                if (!empty($material->video_url)) {
+                    echo '<div class="video-container">';
+                    echo '<video controls class="material-video">';
+                    echo '<source src="' . esc_url($material->video_url) . '" type="video/mp4">';
+                    echo 'Seu navegador não suporta o elemento de vídeo.';
+                    echo '</video>';
+                    echo '</div>';
+                }
+            } else {
+                if (!empty($material->imagem_url)) {
+                    echo '<img src="' . esc_url($material->imagem_url) . '" alt="Material">';
+                }
+            }
+            ?>
         </div>
+
         <div class="material-info">
             <span class="campaign-type <?php echo $material->tipo_campanha; ?>">
                 <?php echo $is_aprovacao ? 'Aprovação' : 'Marketing'; ?>
@@ -298,6 +394,7 @@ function gma_render_material_card($material) {
     <?php
     return ob_get_clean();
 }
+
 function gma_render_action_buttons($material, $is_aprovacao) {
     $edit_url = esc_url(admin_url('admin.php?page=gma-editar-material&id=' . $material->id . '&tipo=' . ($is_aprovacao ? 'aprovacao' : 'marketing')));
     $delete_url = wp_nonce_url(
