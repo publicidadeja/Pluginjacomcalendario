@@ -331,15 +331,21 @@ function gma_render_material_card($material) {
         return '';
     }
 
+    // Debug log
+    if (WP_DEBUG) {
+        error_log('Material data: ' . print_r($material, true));
+    }
+
     $is_aprovacao = isset($material->tipo_campanha) ? $material->tipo_campanha === 'aprovacao' : false;
     $campanha = isset($material->campanha_id) ? gma_obter_campanha($material->campanha_id) : null;
     $nome_campanha = $campanha ? $campanha->nome : 'Campanha não encontrada';
 
     ob_start();
     ?>
-    <div class="material-card <?php echo $is_aprovacao ? 'aprovacao' : 'marketing'; ?>"
+    <div class="material-card <?php echo esc_attr($is_aprovacao ? 'aprovacao' : 'marketing'); ?>"
          data-status="<?php echo esc_attr($material->status_aprovacao); ?>"
          data-tipo="<?php echo esc_attr($material->tipo_campanha); ?>"
+         data-tipo-midia="<?php echo esc_attr($material->tipo_midia); ?>"
          data-campanha="<?php echo esc_attr($material->campanha_id); ?>">
         
         <div class="campaign-name">
@@ -348,49 +354,138 @@ function gma_render_material_card($material) {
 
         <div class="material-image">
             <?php
-            if ($material->tipo_midia === 'carrossel') {
-                $imagens_carrossel = gma_obter_imagens_carrossel($material->id);
-                if (!empty($imagens_carrossel)) {
-                    echo '<div class="swiper-container material-carousel">';
-                    echo '<div class="swiper-wrapper">';
-                    foreach ($imagens_carrossel as $imagem) {
-                        echo '<div class="swiper-slide">';
-                        echo '<img src="' . esc_url($imagem->imagem_url) . '" alt="Material">';
-                        echo '</div>';
+            switch($material->tipo_midia) {
+                case 'carrossel':
+                    $imagens_carrossel = gma_obter_imagens_carrossel($material->id);
+                    if (!empty($imagens_carrossel)) {
+                        $carousel_id = 'carousel-' . $material->id;
+                        ?>
+                        <div class="swiper-container material-carousel" id="<?php echo esc_attr($carousel_id); ?>">
+                            <div class="swiper-wrapper">
+                                <?php foreach ($imagens_carrossel as $imagem) : ?>
+                                    <div class="swiper-slide">
+                                        <img src="<?php echo esc_url($imagem->imagem_url); ?>" 
+                                             alt="Material" 
+                                             class="carousel-image"
+                                             loading="lazy">
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <div class="swiper-pagination"></div>
+                            <div class="swiper-button-next"></div>
+                            <div class="swiper-button-prev"></div>
+                        </div>
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            new Swiper('#<?php echo esc_js($carousel_id); ?>', {
+                                slidesPerView: 1,
+                                spaceBetween: 30,
+                                loop: true,
+                                autoplay: {
+                                    delay: 3000,
+                                    disableOnInteraction: false,
+                                },
+                                pagination: {
+                                    el: '.swiper-pagination',
+                                    clickable: true,
+                                },
+                                navigation: {
+                                    nextEl: '.swiper-button-next',
+                                    prevEl: '.swiper-button-prev',
+                                },
+                            });
+                        });
+                        </script>
+                        <?php
                     }
-                    echo '</div>';
-                    echo '<div class="swiper-pagination"></div>';
-                    echo '<div class="swiper-button-next"></div>';
-                    echo '<div class="swiper-button-prev"></div>';
-                    echo '</div>';
-                }
-            } elseif ($material->tipo_midia === 'video') {
-                if (!empty($material->video_url)) {
-                    echo '<div class="video-container">';
-                    echo '<video controls class="material-video">';
-                    echo '<source src="' . esc_url($material->video_url) . '" type="video/mp4">';
-                    echo 'Seu navegador não suporta o elemento de vídeo.';
-                    echo '</video>';
-                    echo '</div>';
-                }
-            } else {
-                if (!empty($material->imagem_url)) {
-                    echo '<img src="' . esc_url($material->imagem_url) . '" alt="Material">';
-                }
+                    break;
+
+                case 'video':
+                    if (!empty($material->video_url)) {
+                        ?>
+                        <div class="video-container">
+                            <video controls class="material-video" preload="metadata">
+                                <source src="<?php echo esc_url($material->video_url); ?>" type="video/mp4">
+                                <source src="<?php echo esc_url($material->video_url); ?>" type="video/webm">
+                                Seu navegador não suporta o elemento de vídeo.
+                            </video>
+                        </div>
+                        <?php
+                    }
+                    break;
+
+                default: // imagem única
+                    if (!empty($material->imagem_url)) {
+                        echo '<img src="' . esc_url($material->imagem_url) . '" 
+                                  alt="Material" 
+                                  class="single-image"
+                                  loading="lazy">';
+                    }
+                    break;
             }
             ?>
         </div>
 
         <div class="material-info">
-            <span class="campaign-type <?php echo $material->tipo_campanha; ?>">
-                <?php echo $is_aprovacao ? 'Aprovação' : 'Marketing'; ?>
+            <span class="campaign-type <?php echo esc_attr($material->tipo_campanha); ?>">
+                <?php echo esc_html($is_aprovacao ? 'Aprovação' : 'Marketing'); ?>
             </span>
-            <p class="material-copy"><?php echo wp_kses_post(wp_trim_words($material->copy, 10)); ?></p>
+            <?php if (!empty($material->copy)) : ?>
+                <p class="material-copy"><?php echo wp_kses_post(wp_trim_words($material->copy, 10)); ?></p>
+            <?php endif; ?>
             <div class="material-actions">
                 <?php echo gma_render_action_buttons($material, $is_aprovacao); ?>
             </div>
         </div>
     </div>
+
+    <style>
+    .material-card {
+        margin-bottom: 20px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .material-image {
+        position: relative;
+        width: 100%;
+        min-height: 200px;
+        background: #f5f5f5;
+    }
+
+    .material-carousel {
+        height: 300px;
+    }
+
+    .video-container {
+        position: relative;
+        padding-bottom: 56.25%;
+        height: 0;
+        overflow: hidden;
+    }
+
+    .material-video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    .single-image {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .carousel-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    </style>
     <?php
     return ob_get_clean();
 }
@@ -411,3 +506,24 @@ function gma_render_action_buttons($material, $is_aprovacao) {
     return ob_get_clean();
 }
 ?>
+
+<script>
+jQuery(document).ready(function($) {
+    // Inicializar Swiper para cada carrossel
+    $('.material-carousel').each(function() {
+        new Swiper(this, {
+            slidesPerView: 1,
+            spaceBetween: 30,
+            loop: true,
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+        });
+    });
+});
+</script>
