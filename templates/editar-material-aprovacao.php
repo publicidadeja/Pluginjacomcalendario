@@ -64,10 +64,17 @@ if (isset($_POST['atualizar_material_aprovacao']) && isset($_POST['gma_nonce']) 
                         <?php endif; ?>
                     <?php endif; ?>
                 </div>
-                <button type="button" id="gma-upload-btn" class="gma-button secondary">
-                    <i class="dashicons dashicons-upload"></i>
-                    Atualizar Imagem
-                </button>
+                <?php if (in_array($file_extension, $video_extensions) || $material->tipo_midia === 'video'): ?>
+                    <button type="button" id="gma-upload-video-btn" class="gma-button secondary">
+                        <i class="dashicons dashicons-video-alt3"></i>
+                        Atualizar Vídeo
+                    </button>
+                <?php else: ?>
+                    <button type="button" id="gma-upload-btn" class="gma-button secondary">
+                        <i class="dashicons dashicons-upload"></i>
+                        Atualizar Imagem
+                    </button>
+                <?php endif; ?>
             </div>
           
           
@@ -135,6 +142,7 @@ if (isset($_POST['atualizar_material_aprovacao']) && isset($_POST['gma_nonce']) 
 
 <script>
 jQuery(document).ready(function($) {
+    // Inicialização do Media Uploader para imagem
     var mediaUploader;
     
     $('#gma-upload-btn').on('click', function(e) {
@@ -162,6 +170,38 @@ jQuery(document).ready(function($) {
         mediaUploader.open();
     });
 
+    // Inicialização do Media Uploader para vídeo
+    var mediaUploaderVideo;
+    
+    $('#gma-upload-video-btn').on('click', function(e) {
+        e.preventDefault();
+
+        if (mediaUploaderVideo) {
+            mediaUploaderVideo.open();
+            return;
+        }
+
+        mediaUploaderVideo = wp.media({
+            title: 'Escolha ou faça upload de um vídeo',
+            button: {
+                text: 'Usar este vídeo'
+            },
+            multiple: false,
+            library: {
+                type: 'video' // Filtra a biblioteca para mostrar apenas vídeos
+            }
+        });
+
+        mediaUploaderVideo.on('select', function() {
+            var attachment = mediaUploaderVideo.state().get('selection').first().toJSON();
+            $('#gma-imagem-url').val(attachment.url);
+            $('#gma-image-preview').html('<video controls width="100%" height="auto"><source src="' + attachment.url + '" type="video/mp4">Seu navegador não suporta o elemento de vídeo.</video>');
+        });
+
+        mediaUploaderVideo.open();
+    });
+
+    // Contador de caracteres para o feedback
     function updateFeedbackCount() {
         var count = $('#feedback').val().length;
         $('#feedback-count').text(count);
@@ -169,13 +209,72 @@ jQuery(document).ready(function($) {
 
     $('#feedback').on('input', updateFeedbackCount);
     updateFeedbackCount();
+
+    // Validação do formulário
+    $('#gma-approval-form').on('submit', function(e) {
+        var isValid = true;
+        
+        $(this).find('[required]').each(function() {
+            if (!$(this).val()) {
+                isValid = false;
+                $(this).addClass('error');
+            } else {
+                $(this).removeClass('error');
+            }
+        });
+
+        if (!isValid) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos obrigatórios.');
+        }
+    });
+});
+<?php
+wp_enqueue_media();
+wp_enqueue_script('jquery');
+?>
+</script>
+  
+  <script>
+jQuery(document).ready(function($) {
+    $('#get-suggestions').on('click', function() {
+        const copy = $('#copy').val();
+        const button = $(this);
+        
+        if (!copy) {
+            alert('Por favor, insira algum texto primeiro.');
+            return;
+        }
+        
+        button.prop('disabled', true).text('Obtendo sugestões...');
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'gma_get_copy_suggestions',
+                nonce: '<?php echo wp_create_nonce("gma_copy_suggestions"); ?>',
+                copy: copy
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#suggestions-content').html(response.data.suggestions);
+                    $('#suggestions-container').slideDown();
+                } else {
+                    alert('Falha ao obter sugestões. Tente novamente.');
+                }
+            },
+            error: function() {
+                alert('Erro ao conectar com o servidor.');
+            },
+            complete: function() {
+                button.prop('disabled', false).text('Obter Sugestões AI');
+            }
+        });
+    });
 });
 </script>
 
-<?php
-wp_enqueue_media();
-wp_enqueue_style('dashicons');
-?>
 <style>
 :root {
     --primary-color: #4a90e2;
@@ -304,7 +403,7 @@ select, textarea {
 
 <script>
 jQuery(document).ready(function($) {
-    // Inicialização do Media Uploader
+    // Inicialização do Media Uploader para imagem
     var mediaUploader;
     
     $('#gma-upload-btn').on('click', function(e) {
@@ -330,6 +429,37 @@ jQuery(document).ready(function($) {
         });
 
         mediaUploader.open();
+    });
+
+    // Inicialização do Media Uploader para vídeo
+    var mediaUploaderVideo;
+    
+    $('#gma-upload-video-btn').on('click', function(e) {
+        e.preventDefault();
+
+        if (mediaUploaderVideo) {
+            mediaUploaderVideo.open();
+            return;
+        }
+
+        mediaUploaderVideo = wp.media({
+            title: 'Escolha ou faça upload de um vídeo',
+            button: {
+                text: 'Usar este vídeo'
+            },
+            multiple: false,
+            library: {
+                type: 'video' // Filtra a biblioteca para mostrar apenas vídeos
+            }
+        });
+
+        mediaUploaderVideo.on('select', function() {
+            var attachment = mediaUploaderVideo.state().get('selection').first().toJSON();
+            $('#gma-imagem-url').val(attachment.url);
+            $('#gma-image-preview').html('<video controls width="100%" height="auto"><source src="' + attachment.url + '" type="video/mp4">Seu navegador não suporta o elemento de vídeo.</video>');
+        });
+
+        mediaUploaderVideo.open();
     });
 
     // Contador de caracteres para o feedback
