@@ -234,6 +234,31 @@ wp_enqueue_script('gma-admin-script', plugins_url('/assets/js/admin-script.js', 
         width: 100%;
     }
 }
+  
+  .video-container {
+    position: relative;
+    cursor: pointer;
+}
+
+.video-thumbnail {
+    position: relative;
+}
+
+.play-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.7);
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+}
 </style>
 
 <script>
@@ -264,6 +289,16 @@ jQuery(document).ready(function($) {
     // Event listeners para os filtros
     $('#filter-status, #filter-tipo, #filter-campanha-nome').on('change keyup', filterMaterials);
 });
+  $(document).on('click', '.video-thumbnail', function() {
+    const videoUrl = $(this).data('video-url');
+    const videoElement = `
+        <video controls autoplay class="material-media">
+            <source src="${videoUrl}" type="video/mp4">
+            Seu navegador não suporta o elemento de vídeo.
+        </video>
+    `;
+    $(this).replaceWith(videoElement);
+});
 </script>
 
 <?php
@@ -282,16 +317,18 @@ function gma_render_material_card($material) {
         <div class="campaign-name">
             <?php echo esc_html($nome_campanha); ?>
         </div>
-        <div class="material-image">
-            <?php if ($material->tipo_midia === 'imagem') : ?>
-                <img src="<?php echo esc_url($material->imagem_url); ?>" alt="Material">
-            <?php elseif ($material->tipo_midia === 'video') : ?>
-                <video width="100%" height="auto" controls poster="<?php echo esc_url($material->imagem_url); ?>">
-                    <source src="<?php echo esc_url($material->video_url); ?>" type="video/mp4">
-                    Seu navegador não suporta o elemento de vídeo.
-                </video>
-            <?php endif; ?>
+<div class="material-image">
+    <?php if ($material->tipo_midia === 'imagem') : ?>
+        <img src="<?php echo esc_url($material->imagem_url); ?>" alt="Material">
+    <?php elseif ($material->tipo_midia === 'video') : ?>
+        <div class="video-container">
+            <div class="video-thumbnail" data-video-url="<?php echo esc_url($material->video_url); ?>">
+                <img src="<?php echo esc_url($material->imagem_url); ?>" alt="Thumbnail do vídeo">
+                <div class="play-button">▶</div>
+            </div>
         </div>
+    <?php endif; ?>
+</div>
         <div class="material-info">
             <span class="campaign-type <?php echo $material->tipo_campanha; ?>">
                 <?php echo $is_aprovacao ? 'Aprovação' : 'Marketing'; ?>
