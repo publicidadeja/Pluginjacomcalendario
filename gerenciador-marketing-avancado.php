@@ -66,24 +66,6 @@ function gma_desativar_plugin() {
     flush_rewrite_rules();
 }
 
-// Adicionar suporte para formatos de vídeo no Media Uploader
-function gma_adicionar_mime_types($mimes) {
-    // Adiciona formatos de vídeo comuns
-    $mimes['mp4'] = 'video/mp4';
-    $mimes['webm'] = 'video/webm';
-    $mimes['ogg'] = 'video/ogg';
-    return $mimes;
-}
-add_filter('upload_mimes', 'gma_adicionar_mime_types');
-
-// Aumentar limite de upload para vídeos
-function gma_aumentar_limite_upload() {
-    @ini_set('upload_max_size', '64M');
-    @ini_set('post_max_size', '64M');
-    @ini_set('max_execution_time', '300');
-}
-add_action('init', 'gma_aumentar_limite_upload');
-
 // Em gerenciador-marketing-avancado.php
 function gma_enqueue_admin_assets($hook) {
     $gma_pages = array(
@@ -104,14 +86,8 @@ function gma_enqueue_admin_assets($hook) {
             GMA_VERSION
         );
 
-        // Video Player CSS
-        wp_enqueue_style(
-            'gma-video-player',
-            plugins_url('/gerenciador-marketing-avancado/assets/css/video-player.css'),
-            array(),
-            GMA_VERSION
-        );
-
+      
+      
         // JS Admin
         wp_enqueue_script(
             'gma-admin-script',
@@ -121,35 +97,14 @@ function gma_enqueue_admin_assets($hook) {
             true
         );
 
-        // Video Player JS
-        wp_enqueue_script(
-            'gma-video-player',
-            plugins_url('/gerenciador-marketing-avancado/assets/js/video-player.js'),
-            array('jquery'),
-            GMA_VERSION,
-            true
-        );
-
-        // Media Upload JS
-        wp_enqueue_media();
-
         // Adicione este bloco para localizar o script
         wp_localize_script('gma-admin-script', 'gmaData', array(
             'pluginUrl' => GMA_PLUGIN_URL,
             'ajaxurl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('gma_ajax_nonce'),
-            'wpMediaTitle' => __('Escolha ou faça upload de uma mídia', 'gma-plugin'),
-            'wpMediaButton' => __('Usar esta mídia', 'gma-plugin'),
-            'soundUrl' => GMA_PLUGIN_URL . 'assets/sounds/notification.mp3',
-            'allowedTypes' => array(
-                'image' => array('jpg', 'jpeg', 'png', 'gif'),
-                'video' => array('mp4', 'webm', 'ogg')
-            ),
-            'maxUploadSize' => wp_max_upload_size(),
-            'messages' => array(
-                'invalidType' => __('Tipo de arquivo não suportado.', 'gma-plugin'),
-                'fileTooLarge' => __('Arquivo muito grande. Tamanho máximo permitido:', 'gma-plugin')
-            )
+            'wpMediaTitle' => __('Escolha ou faça upload de uma imagem', 'gma-plugin'),
+            'wpMediaButton' => __('Usar esta imagem', 'gma-plugin'),
+            'soundUrl' => GMA_PLUGIN_URL . 'assets/sounds/notification.mp3'
         ));
     }
 }
@@ -612,4 +567,20 @@ add_action('gma_enviar_lembrete_campanha', 'gma_enviar_lembrete_campanha');
 
 // Fim do arquivo
 
+add_shortcode('gma_video', 'gma_video_shortcode');
 
+function gma_video_shortcode($atts, $content = null) {
+    $atts = shortcode_atts(array(
+        'src' => '',
+        'width' => '100%',
+        'height' => 'auto',
+        'controls' => 'true'
+    ), $atts);
+
+    return wp_video_shortcode(array(
+        'src' => $atts['src'],
+        'width' => $atts['width'],
+        'height' => $atts['height'],
+        'controls' => $atts['controls']
+    ));
+}
