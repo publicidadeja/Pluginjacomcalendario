@@ -47,7 +47,21 @@ if (isset($_POST['atualizar_material_aprovacao']) && isset($_POST['gma_nonce']) 
             <div class="gma-material-preview">
                 <div id="gma-image-preview">
                     <?php if (!empty($material->imagem_url)): ?>
-                        <img src="<?php echo esc_url($material->imagem_url); ?>" alt="Preview do Material">
+                        <?php 
+                        // Verifica a extensão do arquivo para determinar se é vídeo
+                        $file_extension = strtolower(pathinfo($material->imagem_url, PATHINFO_EXTENSION));
+                        $video_extensions = ['mp4', 'webm', 'ogg'];
+                        
+                        if (in_array($file_extension, $video_extensions) || $material->tipo_midia === 'video'): ?>
+                            <div class="video-container">
+                                <video controls width="100%" height="auto">
+                                    <source src="<?php echo esc_url($material->imagem_url); ?>" type="video/<?php echo $file_extension; ?>">
+                                    Seu navegador não suporta o elemento de vídeo.
+                                </video>
+                            </div>
+                        <?php else: ?>
+                            <img src="<?php echo esc_url($material->imagem_url); ?>" alt="Preview do Material">
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
                 <button type="button" id="gma-upload-btn" class="gma-button secondary">
