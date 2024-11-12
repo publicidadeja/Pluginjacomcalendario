@@ -259,6 +259,18 @@ wp_enqueue_script('gma-admin-script', plugins_url('/assets/js/admin-script.js', 
     color: white;
     font-size: 24px;
 }
+  
+  .video-container video {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    display: block;
+}
+
+.material-media {
+    width: 100%;
+    border-radius: var(--border-radius);
+}
 </style>
 
 <script>
@@ -304,7 +316,6 @@ jQuery(document).ready(function($) {
 <?php
 function gma_render_material_card($material) {
     $is_aprovacao = $material->tipo_campanha === 'aprovacao';
-    // Get campaign name using the campaign_id from material
     $campanha = gma_obter_campanha($material->campanha_id);
     $nome_campanha = $campanha ? $campanha->nome : 'Campanha não encontrada';
 
@@ -317,18 +328,23 @@ function gma_render_material_card($material) {
         <div class="campaign-name">
             <?php echo esc_html($nome_campanha); ?>
         </div>
-<div class="material-image">
-    <?php if ($material->tipo_midia === 'imagem') : ?>
-        <img src="<?php echo esc_url($material->imagem_url); ?>" alt="Material">
-    <?php elseif ($material->tipo_midia === 'video') : ?>
-        <div class="video-container">
-            <div class="video-thumbnail" data-video-url="<?php echo esc_url($material->video_url); ?>">
-                <img src="<?php echo esc_url($material->imagem_url); ?>" alt="Thumbnail do vídeo">
-                <div class="play-button">▶</div>
-            </div>
+        <div class="material-image">
+            <?php 
+            // Verifica a extensão do arquivo para determinar se é vídeo
+            $file_extension = strtolower(pathinfo($material->imagem_url, PATHINFO_EXTENSION));
+            $video_extensions = ['mp4', 'webm', 'ogg'];
+            
+            if (in_array($file_extension, $video_extensions) || $material->tipo_midia === 'video'): ?>
+                <div class="video-container">
+                    <video controls width="100%" height="auto">
+                        <source src="<?php echo esc_url($material->imagem_url); ?>" type="video/<?php echo $file_extension; ?>">
+                        Seu navegador não suporta o elemento de vídeo.
+                    </video>
+                </div>
+            <?php else: ?>
+                <img src="<?php echo esc_url($material->imagem_url); ?>" alt="Material">
+            <?php endif; ?>
         </div>
-    <?php endif; ?>
-</div>
         <div class="material-info">
             <span class="campaign-type <?php echo $material->tipo_campanha; ?>">
                 <?php echo $is_aprovacao ? 'Aprovação' : 'Marketing'; ?>
