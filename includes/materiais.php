@@ -1,59 +1,54 @@
 <?php
 // Funções relacionadas a materiais
 
-function gma_criar_material($campanha_id, $midias, $copy, $link_canva = '', $tipo_midia = 'imagem') {
+function gma_criar_material($campanha_id, $imagem_url, $copy, $link_canva = '', $arquivo_id = null, $tipo_midia = 'imagem', $video_url = '') {
     global $wpdb;
     $tabela = $wpdb->prefix . 'gma_materiais';
-    
-    if ($tipo_midia === 'carrossel') {
-    // Verifica se $midias é um array válido
-    if (!is_array($midias) || empty($midias)) {
-        return false;
+
+    $dados = array(
+        'campanha_id' => $campanha_id,
+        'copy' => $copy,
+        'link_canva' => $link_canva,
+        'arquivo_id' => $arquivo_id,
+        'status_aprovacao' => 'pendente',
+        'tipo_midia' => $tipo_midia,
+        'data_criacao' => current_time('mysql')
+    );
+
+    // Adiciona URL baseado no tipo de mídia
+    if ($tipo_midia === 'video') {
+        $dados['video_url'] = $video_url;
+        $dados['imagem_url'] = ''; // Campo vazio para vídeos
+    } else {
+        $dados['imagem_url'] = $imagem_url;
+        $dados['video_url'] = ''; // Campo vazio para imagens
     }
+
+    $resultado = $wpdb->insert($tabela, $dados);
+    return $resultado ? $wpdb->insert_id : false;
+}
+
+function gma_render_material_preview($material) {
+    ob_start();
     
-    $material_id = null;
-    
-    foreach ($midias as $index => $imagem_url) {
-        $dados = array(
-            'campanha_id' => $campanha_id,
-            'imagem_url' => esc_url($imagem_url),
-            'copy' => $copy,
-            'link_canva' => $link_canva,
-            'tipo_midia' => $tipo_midia,
-            'ordem' => $index
-        );
-        
-        if ($index === 0) {
-            // Insere o material principal
-            if ($wpdb->insert($tabela, $dados)) {
-                $material_id = $wpdb->insert_id;
-            } else {
-                return false;
-            }
-        } else {
-            // Insere as imagens adicionais vinculadas ao material principal
-            $dados['material_principal_id'] = $material_id;
-            if (!$wpdb->insert($tabela, $dados)) {
-                // Log de erro se a inserção falhar
-                error_log("Erro ao inserir imagem do carrossel: " . $wpdb->last_error);
-            }
+    if ($material->tipo_midia === 'video') {
+        if (!empty($material->video_url)) {
+            echo '<div class="gma-video-preview">';
+            echo '<video controls width="100%">';
+            echo '<source src="' . esc_url($material->video_url) . '" type="video/mp4">';
+            echo 'Seu navegador não suporta o elemento de vídeo.';
+            echo '</video>';
+            echo '</div>';
+        }
+    } else {
+        if (!empty($material->imagem_url)) {
+            echo '<div class="gma-image-preview">';
+            echo '<img src="' . esc_url($material->imagem_url) . '" alt="Preview do Material">';
+            echo '</div>';
         }
     }
     
-    return $material_id;
-} else {
-        $dados = array(
-            'campanha_id' => $campanha_id,
-            'imagem_url' => $tipo_midia === 'video' ? '' : $midias,
-            'video_url' => $tipo_midia === 'video' ? $midias : '',
-            'copy' => $copy,
-            'link_canva' => $link_canva,
-            'tipo_midia' => $tipo_midia
-        );
-        
-        $wpdb->insert($tabela, $dados);
-        return $wpdb->insert_id;
-    }
+    return ob_get_clean();
 }
 
 function gma_handle_criar_material() {
@@ -245,9 +240,7 @@ function gma_exibir_materiais_campanha($campanha_id) {
         echo '<div class="gma-materiais">';
         foreach ($materiais as $material) {
             echo '<div class="gma-material">';
-            if (!empty($material->imagem_url)) {
-                echo '<img src="' . esc_url($material->imagem_url) . '" alt="Material">';
-            }
+            echo gma_render_material_preview($material);
             if (!empty($material->copy)) {
                 echo '<p>' . wp_kses_post($material->copy) . '</p>';
             }
