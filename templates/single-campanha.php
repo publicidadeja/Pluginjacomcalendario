@@ -337,6 +337,17 @@ if ($campanha) :
             flex: 1 1 100px; /* Ajusta a largura dos botões */
             margin-bottom: 5px; /* Adiciona espaçamento entre os botões */
         }
+
+        .gma-material-card {
+            grid-column: span 1; /* Faz com que cada card ocupe uma coluna */
+        }
+    }
+
+    /* Estilos para desktop (max 2 colunas) */
+    @media (min-width: 768px) {
+        .gma-materiais-grid {
+            grid-template-columns: repeat(2, 1fr); /* 2 colunas */
+        }
     }
 
     .gma-button-group {
@@ -416,6 +427,67 @@ if ($campanha) :
         width: 100%;
         border-radius: var(--border-radius);
     }
+
+    /* Estilos da barra de pesquisa */
+    .search-bar {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .search-bar input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+        box-sizing: border-box;
+    }
+
+    .search-bar button {
+        position: absolute;
+        top: 50%;
+        right: 10px;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        color: #333;
+    }
+
+    .search-bar button:hover {
+        color: #007bff;
+    }
+
+    /* Estilos para o resultado da pesquisa */
+    .search-results {
+        display: none; /* Esconde os resultados inicialmente */
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background-color: white;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        z-index: 1;
+    }
+
+    .search-results ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .search-results li {
+        padding: 5px;
+        cursor: pointer;
+    }
+
+    .search-results li:hover {
+        background-color: #f0f0f0;
+    }
 </style>
 
 <div class="gma-campanha-wrapper">
@@ -464,6 +536,15 @@ if ($campanha) :
             </div>
         <?php endif; ?>
 
+        <div class="search-bar">
+            <input type="text" id="search-input" placeholder="Pesquisar nos materiais...">
+            <button type="button" onclick="searchMaterials()"><i class="fas fa-search"></i></button>
+        </div>
+
+        <div class="search-results" id="search-results">
+            <ul></ul>
+        </div>
+
         <?php if (!empty($campanha->copy)) : ?>
             <div class="gma-campanha-section gma-campanha-copy">
                 <h2><i class="fas fa-copy"></i> Copy da Campanha</h2>
@@ -483,9 +564,9 @@ if ($campanha) :
         ?>
             <div class="gma-campanha-section gma-campanha-materiais">
                 <h2><i class="fas fa-images"></i> Materiais da Campanha</h2>
-                <div class="gma-materiais-grid">
+                <div class="gma-materiais-grid" id="materiais-grid">
                     <?php foreach ($materiais as $material) : ?>
-                        <div class="gma-material-card">
+                        <div class="gma-material-card" data-material-id="<?php echo esc_attr($material->id); ?>">
                             <?php if (!empty($material->imagem_url)) : ?>
                                 <?php 
                                 // Verifica a extensão do arquivo para determinar se é vídeo
@@ -535,8 +616,7 @@ if ($campanha) :
         <?php endif; ?>
     </div>
 </div>
-content_copy
- Use code with caution.
+
 </div>
 
 <div class="gma-lightbox">
@@ -575,6 +655,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+function searchMaterials() {
+    const searchTerm = document.getElementById('search-input').value.toLowerCase();
+    const materiaisGrid = document.getElementById('materiais-grid');
+    const materialCards = materiaisGrid.querySelectorAll('.gma-material-card');
+
+    materialCards.forEach(card => {
+        const materialCopy = card.querySelector('.gma-material-copy').textContent.toLowerCase();
+        if (materialCopy.includes(searchTerm)) {
+            card.style.display = 'block'; // Mostra o card se a copy do material contém o termo de pesquisa
+        } else {
+            card.style.display = 'none'; // Esconde o card se a copy do material não contém o termo de pesquisa
+        }
+    });
+}
 </script>
 
 <?php
