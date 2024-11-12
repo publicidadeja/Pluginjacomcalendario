@@ -64,13 +64,34 @@ wp_localize_script('jquery', 'gma_ajax', array(
             <div class="gma-material-preview">
                 <div id="gma-image-preview">
                     <?php if (!empty($material->imagem_url)): ?>
-                        <img src="<?php echo esc_url($material->imagem_url); ?>" alt="Preview do Material">
+                        <?php 
+                        // Verifica a extensão do arquivo para determinar se é vídeo
+                        $file_extension = strtolower(pathinfo($material->imagem_url, PATHINFO_EXTENSION));
+                        $video_extensions = ['mp4', 'webm', 'ogg'];
+                        
+                        if (in_array($file_extension, $video_extensions) || $material->tipo_midia === 'video'): ?>
+                            <div class="video-container">
+                                <video controls width="100%" height="auto">
+                                    <source src="<?php echo esc_url($material->imagem_url); ?>" type="video/<?php echo $file_extension; ?>">
+                                    Seu navegador não suporta o elemento de vídeo.
+                                </video>
+                            </div>
+                        <?php else: ?>
+                            <img src="<?php echo esc_url($material->imagem_url); ?>" alt="Preview do Material">
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
-                <button type="button" id="gma-upload-btn" class="gma-button secondary">
-                    <i class="dashicons dashicons-upload"></i>
-                    Atualizar Imagem
-                </button>
+                <?php if (in_array($file_extension, $video_extensions) || $material->tipo_midia === 'video'): ?>
+                    <button type="button" id="gma-upload-video-btn" class="gma-button secondary">
+                        <i class="dashicons dashicons-video-alt3"></i>
+                        Atualizar Vídeo
+                    </button>
+                <?php else: ?>
+                    <button type="button" id="gma-upload-btn" class="gma-button secondary">
+                        <i class="dashicons dashicons-upload"></i>
+                        Atualizar Imagem
+                    </button>
+                <?php endif; ?>
             </div>
           
             <div class="gma-form-group">
@@ -175,7 +196,7 @@ jQuery(document).ready(function($) {
 
 <script>
 jQuery(document).ready(function($) {
-    // Inicialização do Media Uploader
+    // Inicialização do Media Uploader para imagem
     var mediaUploader;
     
     $('#gma-upload-btn').on('click', function(e) {
@@ -201,6 +222,37 @@ jQuery(document).ready(function($) {
         });
 
         mediaUploader.open();
+    });
+
+    // Inicialização do Media Uploader para vídeo
+    var mediaUploaderVideo;
+    
+    $('#gma-upload-video-btn').on('click', function(e) {
+        e.preventDefault();
+
+        if (mediaUploaderVideo) {
+            mediaUploaderVideo.open();
+            return;
+        }
+
+        mediaUploaderVideo = wp.media({
+            title: 'Escolha ou faça upload de um vídeo',
+            button: {
+                text: 'Usar este vídeo'
+            },
+            multiple: false,
+            library: {
+                type: 'video' // Filtra a biblioteca para mostrar apenas vídeos
+            }
+        });
+
+        mediaUploaderVideo.on('select', function() {
+            var attachment = mediaUploaderVideo.state().get('selection').first().toJSON();
+            $('#gma-imagem-url').val(attachment.url);
+            $('#gma-image-preview').html('<video controls width="100%" height="auto"><source src="' + attachment.url + '" type="video/mp4">Seu navegador não suporta o elemento de vídeo.</video>');
+        });
+
+        mediaUploaderVideo.open();
     });
 
     // Sugestões AI
@@ -374,7 +426,7 @@ select, textarea, input[type="url"] {
 
 <script>
 jQuery(document).ready(function($) {
-    // Inicialização do Media Uploader
+    // Inicialização do Media Uploader para imagem
     var mediaUploader;
     
     $('#gma-upload-btn').on('click', function(e) {
@@ -400,6 +452,37 @@ jQuery(document).ready(function($) {
         });
 
         mediaUploader.open();
+    });
+
+    // Inicialização do Media Uploader para vídeo
+    var mediaUploaderVideo;
+    
+    $('#gma-upload-video-btn').on('click', function(e) {
+        e.preventDefault();
+
+        if (mediaUploaderVideo) {
+            mediaUploaderVideo.open();
+            return;
+        }
+
+        mediaUploaderVideo = wp.media({
+            title: 'Escolha ou faça upload de um vídeo',
+            button: {
+                text: 'Usar este vídeo'
+            },
+            multiple: false,
+            library: {
+                type: 'video' // Filtra a biblioteca para mostrar apenas vídeos
+            }
+        });
+
+        mediaUploaderVideo.on('select', function() {
+            var attachment = mediaUploaderVideo.state().get('selection').first().toJSON();
+            $('#gma-imagem-url').val(attachment.url);
+            $('#gma-image-preview').html('<video controls width="100%" height="auto"><source src="' + attachment.url + '" type="video/mp4">Seu navegador não suporta o elemento de vídeo.</video>');
+        });
+
+        mediaUploaderVideo.open();
     });
 
     // Sugestões AI
