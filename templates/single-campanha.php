@@ -379,6 +379,43 @@ if ($campanha) :
     .gma-campanha-section pre {
         white-space: pre-wrap; /* Preserva espaços em branco e quebra de linha */
     }
+
+    .video-container {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .video-thumbnail {
+        position: relative;
+    }
+
+    .play-button {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0,0,0,0.7);
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+    }
+
+    .video-container video {
+        width: 100%;
+        height: auto;
+        max-width: 100%;
+        display: block;
+    }
+
+    .material-media {
+        width: 100%;
+        border-radius: var(--border-radius);
+    }
 </style>
 
 <div class="gma-campanha-wrapper">
@@ -390,97 +427,116 @@ if ($campanha) :
             </div>
         </div>
 
-        <?php if (!empty($campanha->imagem_url)) : ?>
-            <a href="<?php echo esc_url($campanha->imagem_url); ?>" class="gma-download-button" onclick="window.open(this.href); return false;">
-                <i class="fas fa-download"></i> Baixar Imagem
-            </a>
+<?php if (!empty($campanha->imagem_url)) : ?>
+        <a href="<?php echo esc_url($campanha->imagem_url); ?>" class="gma-download-button" onclick="window.open(this.href); return false;">
+            <i class="fas fa-download"></i> Baixar Imagem
+        </a>
+    <?php endif; ?>
+</div>
+
+<div class="gma-campanha-content">
+    <div class="gma-campanha-sidebar">
+        <div class="gma-sidebar-item gma-campanha-stats">
+            <h3><i class="fas fa-chart-bar"></i> Estatísticas da Campanha</h3>
+            <ul class="gma-stats-list">
+                <li><i class="fas fa-eye"></i> Visualizações: <?php echo esc_html($estatisticas->visualizacoes); ?></li>
+                <li><i class="fas fa-mouse-pointer"></i> Cliques: <?php echo esc_html($estatisticas->cliques); ?></li>
+                <li><i class="fas fa-chart-line"></i> Conversões: <?php echo esc_html($estatisticas->conversoes); ?></li>
+            </ul>
+        </div>
+
+        <?php if (!empty($campanha->link_canva)) : ?>
+            <div class="gma-sidebar-item">
+                <a href="<?php echo esc_url($campanha->link_canva); ?>" target="_blank" class="gma-button gma-button-primary" data-campanha-id="<?php echo esc_attr($campanha_id); ?>">
+                    <i class="fas fa-edit"></i> Editar
+                </a>
+            </div>
         <?php endif; ?>
     </div>
 
-    <div class="gma-campanha-content">
-        <div class="gma-campanha-sidebar">
-            <div class="gma-sidebar-item gma-campanha-stats">
-                <h3><i class="fas fa-chart-bar"></i> Estatísticas da Campanha</h3>
-                <ul class="gma-stats-list">
-                    <li><i class="fas fa-eye"></i> Visualizações: <?php echo esc_html($estatisticas->visualizacoes); ?></li>
-                    <li><i class="fas fa-mouse-pointer"></i> Cliques: <?php echo esc_html($estatisticas->cliques); ?></li>
-                    <li><i class="fas fa-chart-line"></i> Conversões: <?php echo esc_html($estatisticas->conversoes); ?></li>
-                </ul>
+    <div class="gma-campanha-main">
+        <?php if (!empty($campanha->descricao)) : ?>
+            <div class="gma-campanha-section gma-campanha-descricao">
+                <h2><i class="fas fa-info-circle"></i> Sobre a Campanha</h2>
+                <div class="gma-content-expandable">
+                    <?php echo wp_kses_post($campanha->descricao); ?>
+                </div>
             </div>
+        <?php endif; ?>
 
-            <?php if (!empty($campanha->link_canva)) : ?>
-                <div class="gma-sidebar-item">
-                    <a href="<?php echo esc_url($campanha->link_canva); ?>" target="_blank" class="gma-button gma-button-primary" data-campanha-id="<?php echo esc_attr($campanha_id); ?>">
-                        <i class="fas fa-edit"></i> Editar
-                    </a>
+        <?php if (!empty($campanha->copy)) : ?>
+            <div class="gma-campanha-section gma-campanha-copy">
+                <h2><i class="fas fa-copy"></i> Copy da Campanha</h2>
+                <div class="gma-content-expandable">
+                    <p id="copy-text"><?php echo wp_kses_post($campanha->copy); ?></p>
+                    <button class="gma-copy-button" onclick="copiarTexto('copy-text')">
+                        <i class="fas fa-clipboard"></i> Copiar Texto
+                    </button>
                 </div>
-            <?php endif; ?>
-        </div>
+            </div>
+        <?php endif; ?>
 
-        <div class="gma-campanha-main">
-            <?php if (!empty($campanha->descricao)) : ?>
-                <div class="gma-campanha-section gma-campanha-descricao">
-                    <h2><i class="fas fa-info-circle"></i> Sobre a Campanha</h2>
-                    <div class="gma-content-expandable">
-                        <?php echo wp_kses_post($campanha->descricao); ?>
-                    </div>
-                </div>
-            <?php endif; ?>
+        <?php
+        $materiais = gma_obter_materiais_campanha($campanha_id);
 
-            <?php if (!empty($campanha->copy)) : ?>
-                <div class="gma-campanha-section gma-campanha-copy">
-                    <h2><i class="fas fa-copy"></i> Copy da Campanha</h2>
-                    <div class="gma-content-expandable">
-                        <p id="copy-text"><?php echo wp_kses_post($campanha->copy); ?></p>
-                        <button class="gma-copy-button" onclick="copiarTexto('copy-text')">
-                            <i class="fas fa-clipboard"></i> Copiar Texto
-                        </button>
-                    </div>
-                </div>
-            <?php endif; ?>
-
-            <?php
-            $materiais = gma_obter_materiais_campanha($campanha_id);
-
-            if ($materiais) :
-            ?>
-                <div class="gma-campanha-section gma-campanha-materiais">
-                    <h2><i class="fas fa-images"></i> Materiais da Campanha</h2>
-                    <div class="gma-materiais-grid">
-                        <?php foreach ($materiais as $material) : ?>
-                            <div class="gma-material-card">
-                                <?php if (!empty($material->imagem_url)) : ?>
-                                    <div class="gma-material-image" style="background-image: url('<?php echo esc_url($material->imagem_url); ?>')" data-src="<?php echo esc_url($material->imagem_url); ?>">
+        if ($materiais) :
+        ?>
+            <div class="gma-campanha-section gma-campanha-materiais">
+                <h2><i class="fas fa-images"></i> Materiais da Campanha</h2>
+                <div class="gma-materiais-grid">
+                    <?php foreach ($materiais as $material) : ?>
+                        <div class="gma-material-card">
+                            <?php if (!empty($material->imagem_url)) : ?>
+                                <?php 
+                                // Verifica a extensão do arquivo para determinar se é vídeo
+                                $file_extension = strtolower(pathinfo($material->imagem_url, PATHINFO_EXTENSION));
+                                $video_extensions = ['mp4', 'webm', 'ogg'];
+                                
+                                if (in_array($file_extension, $video_extensions) || $material->tipo_midia === 'video'): ?>
+                                    <div class="video-container">
+                                        <video controls width="100%" height="auto">
+                                            <source src="<?php echo esc_url($material->imagem_url); ?>" type="video/<?php echo $file_extension; ?>">
+                                            Seu navegador não suporta o elemento de vídeo.
+                                        </video>
                                     </div>
-                                <?php endif; ?>
-
-                                <?php if (!empty($material->copy)) : ?>
-                                    <div class="gma-material-copy">
-                                        <p id="copy-text-<?php echo esc_attr($material->id); ?>"><?php echo wp_kses_post($material->copy); ?></p>
-                                        <div class="gma-button-group">
-                                            <button class="gma-copy-button" onclick="copiarTexto('copy-text-<?php echo esc_attr($material->id); ?>')">
-                                                <i class="fas fa-clipboard"></i> Copiar Texto
-                                            </button>
-                                            <?php if (!empty($material->link_canva)) : ?>
-                                                <a href="<?php echo esc_url($material->link_canva); ?>" target="_blank" class="gma-copy-button">
-                                                    <i class="fas fa-edit"></i> Editar
-                                                </a>
-                                            <?php endif; ?>
-                                            <?php if (!empty($material->imagem_url)) : ?>
-                                                <a href="<?php echo esc_url($material->imagem_url); ?>" download class="gma-copy-button">
-                                                    <i class="fas fa-download"></i> Download
-                                                </a>
-                                            <?php endif; ?>
+                                <?php else: ?>
+                                    <div class="gma-material-image" style="background-image: url('<?php echo esc_url($material->imagem_url); ?>')" data-src="<?php echo esc_url($material->imagem_url); ?>">
+                                        <div class="gma-material-overlay">
+                                            <i class="fas fa-search-plus"></i>
                                         </div>
                                     </div>
                                 <?php endif; ?>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
+                            <?php endif; ?>
+
+                            <?php if (!empty($material->copy)) : ?>
+                                <div class="gma-material-copy">
+                                    <p id="copy-text-<?php echo esc_attr($material->id); ?>"><?php echo wp_kses_post($material->copy); ?></p>
+                                    <div class="gma-button-group">
+                                        <button class="gma-copy-button" onclick="copiarTexto('copy-text-<?php echo esc_attr($material->id); ?>')">
+                                            <i class="fas fa-clipboard"></i> Copiar Texto
+                                        </button>
+                                        <?php if (!empty($material->link_canva)) : ?>
+                                            <a href="<?php echo esc_url($material->link_canva); ?>" target="_blank" class="gma-copy-button">
+                                                <i class="fas fa-edit"></i> Editar
+                                            </a>
+                                        <?php endif; ?>
+                                        <?php if (!empty($material->imagem_url)) : ?>
+                                            <a href="<?php echo esc_url($material->imagem_url); ?>" download class="gma-copy-button">
+                                                <i class="fas fa-download"></i> Download
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
-            <?php endif; ?>
-        </div>
+            </div>
+        <?php endif; ?>
     </div>
+</div>
+content_copy
+ Use code with caution.
 </div>
 
 <div class="gma-lightbox">
